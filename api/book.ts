@@ -121,7 +121,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const check = isStillAvailable(meeting, start.toUTC().toISO()!, busy);
     if (!check.ok) return res.status(409).json({ error: check.reason });
 
-    const summary = meeting.eventTitle.replace(/\{name\}/g, name);
+    // Generic {key} substitution against form responses; falls back to the booker's
+    // name if the template references a field that wasn't provided.
+    const summary = meeting.eventTitle.replace(/\{(\w+)\}/g, (_match, key) => {
+      const v = clean[key];
+      return (v && v.length > 0) ? v : name;
+    });
     const description = buildDescription(meeting, clean, guestTimezone);
 
     const event = await createBookingEvent({

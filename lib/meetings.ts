@@ -71,7 +71,7 @@ export const MEETINGS: Record<string, MeetingType> = {
     prepNote:
       'Please come prepared with any updates from your side (e.g. business goals, seasonal changes, promotions, or product/service news), so we can make the most of our time together.',
     durationMinutes: 45,
-    eventTitle: 'Monthly Recap Call w/ {name}',
+    eventTitle: 'Monthly Recap Call w/ {company}',
     additionalFreebusyCalendars: ['michael@jaxmediateam.com'],
     additionalAttendees: ['michael@jaxmediateam.com'],
     formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD],
@@ -91,7 +91,7 @@ export const MEETINGS: Record<string, MeetingType> = {
       'Where Jax Media Team can help — and where we cannot',
     ],
     durationMinutes: 15,
-    eventTitle: 'Discovery Call w/ {name}',
+    eventTitle: 'Discovery Call w/ {company}',
     formFields: [
       NAME_FIELD,
       EMAIL_FIELD,

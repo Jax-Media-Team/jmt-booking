@@ -2,7 +2,14 @@
   'use strict';
 
   var params = new URLSearchParams(location.search);
-  var meetingSlug = params.get('type') || 'monthly-recap';
+  // Slug comes from the URL path (/monthly-recap, /discovery) when Vercel rewrites
+  // hide the ?type=… param. Falls back to query string for direct /book.html access.
+  function detectMeetingSlug() {
+    var path = location.pathname.replace(/^\/+|\/+$/g, '').replace(/\.html$/, '');
+    if (path && path !== 'book' && path !== 'index') return path;
+    return params.get('type') || 'monthly-recap';
+  }
+  var meetingSlug = detectMeetingSlug();
   var guestTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
   var state = {
