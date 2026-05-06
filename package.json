@@ -1,0 +1,23 @@
+{
+  "name": "jmt-booking",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hosted Calendly replacement for Jax Media Team",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "tsc --noEmit",
+    "auth": "ts-node scripts/get-refresh-token.ts"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0",
+    "luxon": "^3.5.0",
+    "resend": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.4.2",
+    "@types/node": "^22.9.0",
+    "@vercel/node": "^5.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}

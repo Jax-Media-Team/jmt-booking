@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book a call · Jax Media Team</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <div class="brand">
+      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+        <div class="brand-mark">JMT</div>
+        <div class="brand-name">Jax Media Team</div>
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="booking">
+        <aside class="booking-info">
+          <h1 id="m-name">Loading…</h1>
+          <p class="subtitle" id="m-desc"></p>
+          <ul class="meta-list">
+            <li><span class="meta-icon">●</span><span id="m-duration"></span></li>
+            <li><span class="meta-icon">●</span><span id="m-location"></span></li>
+            <li><span class="meta-icon">●</span><span id="m-tz"></span></li>
+          </ul>
+        </aside>
+
+        <section class="picker">
+          <div id="step-time">
+            <div class="picker-header">
+              <div class="picker-month" id="month-label"></div>
+              <div class="picker-nav">
+                <button id="prev-month" aria-label="Previous month">‹</button>
+                <button id="next-month" aria-label="Next month">›</button>
+              </div>
+            </div>
+            <div class="calendar" id="calendar"></div>
+
+            <div id="slots-area" hidden>
+              <div class="slots-header" id="slots-header"></div>
+              <div class="slots" id="slots"></div>
+            </div>
+
+            <div class="loading" id="loading">Loading availability…</div>
+            <div class="empty-state" id="empty" hidden>No availability in this month — try the next one.</div>
+          </div>
+
+          <form class="form" id="step-form" hidden>
+            <div>
+              <div class="slots-header" id="confirm-when"></div>
+              <a href="#" id="back-to-time" style="font-size:13px;">← Pick a different time</a>
+            </div>
+            <div>
+              <label for="name">Full name</label>
+              <input id="name" name="name" type="text" required autocomplete="name" maxlength="200">
+            </div>
+            <div>
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" required autocomplete="email" maxlength="320">
+            </div>
+            <div>
+              <label for="notes">Anything you'd like me to know? <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+              <textarea id="notes" name="notes" maxlength="2000"></textarea>
+            </div>
+            <div id="form-error" class="notice" hidden></div>
+            <button type="submit" class="btn" id="submit-btn">Confirm booking</button>
+          </form>
+        </section>
+      </div>
+    </div>
+
+    <footer>&copy; Jax Media Team</footer>
+  </main>
+  <script src="/js/booking.js"></script>
+</body>
+</html>
