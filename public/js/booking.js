@@ -102,6 +102,7 @@
         }
 
         renderForm(data.meeting.formFields || []);
+        prefillFromUrl(data.meeting.formFields || []);
 
         var today = new Date();
         state.viewYear = today.getFullYear();
@@ -178,6 +179,32 @@
     var groups = els.formFields.querySelectorAll('.radio-group');
     for (var g = 0; g < groups.length; g++) {
       groups[g].addEventListener('change', onRadioChange);
+    }
+  }
+
+  function prefillFromUrl(fields) {
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      var val = params.get(f.name);
+      if (!val) continue;
+      if (f.type === 'radio') {
+        var radio = els.formFields.querySelector('input[name="' + f.name + '"][value="' + val.replace(/"/g, '\\"') + '"]');
+        if (radio) {
+          radio.checked = true;
+          var group = radio.closest('.radio-group');
+          if (group) {
+            var labels = group.querySelectorAll('.radio-option');
+            for (var k = 0; k < labels.length; k++) {
+              var input = labels[k].querySelector('input');
+              if (input && input.checked) labels[k].classList.add('selected');
+              else labels[k].classList.remove('selected');
+            }
+          }
+        }
+      } else {
+        var el = els.formFields.querySelector('[name="' + f.name + '"]');
+        if (el) el.value = val;
+      }
     }
   }
 
@@ -322,11 +349,13 @@
       }
     }
 
+    var hp = document.getElementById('hp_website');
     var payload = {
       meetingSlug: meetingSlug,
       startISO: state.selectedSlot,
       responses: responses,
       guestTimezone: guestTz,
+      hp_website: hp ? hp.value : '',
     };
     els.submitBtn.disabled = true;
     els.submitBtn.textContent = 'Booking…';

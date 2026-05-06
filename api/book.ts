@@ -82,6 +82,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = req.body as Partial<BookingRequest> | undefined;
   if (!body) return badRequest(res, 'Missing body');
 
+  // Honeypot: bots tend to fill every input. Real humans never see this field.
+  // Return a fake-success so bots don't retry.
+  if (typeof body.hp_website === 'string' && body.hp_website.trim().length > 0) {
+    console.warn('Honeypot tripped — rejecting booking silently.');
+    return res.status(200).json({ ok: true });
+  }
+
   const meetingSlug = String(body.meetingSlug ?? '').trim();
   const startISO = String(body.startISO ?? '').trim();
   const responses = (body.responses ?? {}) as Record<string, string>;

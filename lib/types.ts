@@ -57,4 +57,6 @@ export interface BookingRequest {
   startISO: string;
   responses: Record<string, string>;
   guestTimezone?: string;
+  /** Honeypot field — must be empty for the booking to be processed. */
+  hp_website?: string;
 }

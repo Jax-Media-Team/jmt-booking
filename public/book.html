@@ -68,6 +68,11 @@
               <div class="slots-header" id="confirm-when"></div>
               <a href="#" id="back-to-time" class="link-back">← Pick a different time</a>
             </div>
+            <!-- Honeypot: invisible to humans, bots fill it in. Server rejects any non-empty value. -->
+            <div class="hp-field" aria-hidden="true">
+              <label for="hp_website">Website (leave blank)</label>
+              <input id="hp_website" name="hp_website" type="text" tabindex="-1" autocomplete="off">
+            </div>
             <div id="form-fields"></div>
             <div id="form-error" class="notice" hidden></div>
             <button type="submit" class="btn" id="submit-btn">Confirm booking</button>
