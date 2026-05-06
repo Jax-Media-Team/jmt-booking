@@ -59,13 +59,23 @@ a:hover { color: var(--red-dark); }
   display: inline-flex;
   align-items: center;
   text-decoration: none;
-  padding: 6px 10px;
+  padding: 10px 16px;
   border-radius: var(--radius-sm);
   background: var(--white);
   border: 1px solid var(--border);
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
 }
-.site-logo img { display: block; height: 32px; width: auto; }
-.site-logo:hover { border-color: var(--teal); text-decoration: none; }
+.site-logo img { display: block; height: 56px; width: auto; }
+.site-logo:hover {
+  border-color: var(--teal);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+@media (max-width: 520px) {
+  .site-logo { padding: 8px 12px; }
+  .site-logo img { height: 44px; }
+  .header-meta { display: none; }
+}
 
 .header-meta {
   font-size: 13px;
