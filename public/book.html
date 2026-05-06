@@ -5,27 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Book a call · Jax Media Team</title>
   <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="/img/logo.jpg">
 </head>
 <body>
   <main class="shell">
-    <div class="brand">
-      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-        <div class="brand-mark">JMT</div>
-        <div class="brand-name">Jax Media Team</div>
+    <header class="site-header">
+      <a class="site-logo" href="/" aria-label="Jax Media Team home">
+        <img src="/img/logo.jpg" alt="Jax Media Team">
       </a>
-    </div>
+      <div class="header-meta">with <strong>Patrick Cruz</strong></div>
+    </header>
 
     <div class="card">
       <div class="booking">
         <aside class="booking-info">
+          <span class="eyebrow">Book a Time</span>
           <h1 id="m-name">Loading…</h1>
           <p class="subtitle" id="m-desc"></p>
+
           <ul class="meta-list">
-            <li><span class="meta-icon">●</span><span id="m-duration"></span></li>
-            <li><span class="meta-icon">●</span><span id="m-location"></span></li>
-            <li><span class="meta-icon">●</span><span id="m-tz"></span></li>
+            <li><span class="meta-icon">⏱</span><span id="m-duration"></span></li>
+            <li><span class="meta-icon">⌖</span><span id="m-location"></span></li>
+            <li><span class="meta-icon">⌚</span><span id="m-tz"></span></li>
           </ul>
+
+          <p class="long-description" id="m-long" hidden></p>
+
+          <div id="m-agenda-block" hidden>
+            <div class="agenda-title">We'll cover</div>
+            <ul class="agenda-list" id="m-agenda"></ul>
+          </div>
+
+          <div class="prep-note" id="m-prep" hidden></div>
         </aside>
 
         <section class="picker">
@@ -51,7 +66,7 @@
           <form class="form" id="step-form" hidden>
             <div>
               <div class="slots-header" id="confirm-when"></div>
-              <a href="#" id="back-to-time" style="font-size:13px;">← Pick a different time</a>
+              <a href="#" id="back-to-time" class="link-back">← Pick a different time</a>
             </div>
             <div>
               <label for="name">Full name</label>
@@ -63,7 +78,7 @@
             </div>
             <div>
               <label for="notes">Anything you'd like me to know? <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-              <textarea id="notes" name="notes" maxlength="2000"></textarea>
+              <textarea id="notes" name="notes" maxlength="2000" placeholder="Updates, goals, questions, context — anything that helps me prep."></textarea>
             </div>
             <div id="form-error" class="notice" hidden></div>
             <button type="submit" class="btn" id="submit-btn">Confirm booking</button>
@@ -72,7 +87,7 @@
       </div>
     </div>
 
-    <footer>&copy; Jax Media Team</footer>
+    <footer>&copy; Jax Media Team · <a href="https://jaxmediateam.com">jaxmediateam.com</a></footer>
   </main>
   <script src="/js/booking.js"></script>
 </body>

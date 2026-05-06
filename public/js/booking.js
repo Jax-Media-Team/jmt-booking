@@ -18,6 +18,10 @@
   var els = {
     name: document.getElementById('m-name'),
     desc: document.getElementById('m-desc'),
+    long: document.getElementById('m-long'),
+    agendaBlock: document.getElementById('m-agenda-block'),
+    agenda: document.getElementById('m-agenda'),
+    prep: document.getElementById('m-prep'),
     duration: document.getElementById('m-duration'),
     location: document.getElementById('m-location'),
     tz: document.getElementById('m-tz'),
@@ -72,6 +76,27 @@
         els.duration.textContent = fmtDuration(data.meeting.durationMinutes);
         els.location.textContent = data.meeting.location;
         els.tz.textContent = 'Times shown in ' + guestTz;
+
+        if (data.meeting.longDescription) {
+          els.long.textContent = data.meeting.longDescription;
+          els.long.hidden = false;
+        }
+        if (data.meeting.agenda && data.meeting.agenda.length > 0) {
+          var agendaHtml = '';
+          for (var ai = 0; ai < data.meeting.agenda.length; ai++) {
+            var item = String(data.meeting.agenda[ai])
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
+            agendaHtml += '<li>' + item + '</li>';
+          }
+          els.agenda.innerHTML = agendaHtml;
+          els.agendaBlock.hidden = false;
+        }
+        if (data.meeting.prepNote) {
+          els.prep.textContent = data.meeting.prepNote;
+          els.prep.hidden = false;
+        }
 
         var today = new Date();
         state.viewYear = today.getFullYear();

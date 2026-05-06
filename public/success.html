@@ -5,27 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Booking confirmed · Jax Media Team</title>
   <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="/img/logo.jpg">
 </head>
 <body>
   <main class="shell">
-    <div class="brand">
-      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-        <div class="brand-mark">JMT</div>
-        <div class="brand-name">Jax Media Team</div>
+    <header class="site-header">
+      <a class="site-logo" href="/" aria-label="Jax Media Team home">
+        <img src="/img/logo.jpg" alt="Jax Media Team">
       </a>
-    </div>
+      <div class="header-meta">with <strong>Patrick Cruz</strong></div>
+    </header>
 
     <div class="card success-card">
       <div class="success-icon">✓</div>
-      <h1>You're booked</h1>
-      <p class="subtitle" id="confirm-line">A calendar invite is on its way to your inbox.</p>
-      <p class="success-detail" id="when-line"></p>
+      <h1>You're booked.</h1>
+      <p class="subtitle" style="margin: 8px auto 16px;" id="confirm-line">A calendar invite is on its way to your inbox.</p>
+      <p class="success-detail"><strong id="when-line"></strong></p>
       <p class="success-detail" id="meet-line"></p>
-      <p style="margin-top:24px"><a href="/">Schedule another call</a></p>
+      <p style="margin-top: 28px;"><a href="/" class="link-back">← Schedule another call</a></p>
     </div>
 
-    <footer>&copy; Jax Media Team</footer>
+    <footer>&copy; Jax Media Team · <a href="https://jaxmediateam.com">jaxmediateam.com</a></footer>
   </main>
   <script>
     (function () {
