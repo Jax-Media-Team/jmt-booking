@@ -1,6 +1,8 @@
 # JMT Booking
 
-A self-hosted Calendly replacement for Jax Media Team. Two meeting types out of the box (Monthly Recap Call, Discovery Call), conflict-checking across multiple Google Calendars, Google Meet links, and email confirmations — without paying per "calendar connection."
+A self-hosted Calendly replacement for Jax Media Team. Two meeting types out of the box (Monthly Recap Call, Discovery Call), conflict-checking across multiple Google Calendars, auto-attached Google Meet links, and dynamic per-meeting form fields.
+
+Live at [book.jaxmediateam.com](https://book.jaxmediateam.com).
 
 ## Stack
 

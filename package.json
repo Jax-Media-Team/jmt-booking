@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vercel dev",
     "build": "tsc --noEmit",
-    "auth": "ts-node scripts/get-refresh-token.ts"
+    "auth": "ts-node scripts/get-refresh-token.ts",
+    "smoke": "ts-node scripts/smoke-test.ts",
+    "deploy": "vercel deploy --prod --yes"
   },
   "dependencies": {
     "googleapis": "^144.0.0",
