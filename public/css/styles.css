@@ -334,7 +334,71 @@ h2 { font-size: 18px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em
 .loading { color: var(--muted); font-size: 14px; padding: 24px 0; text-align: center; }
 
 /* Form */
-.form { display: grid; gap: 16px; margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border); }
+.form { display: grid; gap: 18px; margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border); }
+.form .field { display: block; }
+.field-helper {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.radio-option {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dark);
+  background: var(--white);
+  transition: all 0.15s;
+  text-align: center;
+  user-select: none;
+  min-width: 80px;
+}
+.radio-option input { position: absolute; opacity: 0; pointer-events: none; }
+.radio-option:hover { border-color: var(--teal); color: var(--teal-dark); }
+.radio-option.selected {
+  background: var(--red);
+  color: var(--white);
+  border-color: var(--red);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(237, 27, 36, 0.25);
+}
+.radio-option.selected:hover { background: var(--red-dark); border-color: var(--red-dark); color: var(--white); }
+
+/* AI disclosure banner on landing page */
+.ai-banner {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: linear-gradient(135deg, var(--teal-soft) 0%, #f4fbfc 100%);
+  border: 1px solid var(--teal);
+  border-left: 4px solid var(--teal-dark);
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  color: var(--dark);
+  margin-bottom: 28px;
+  line-height: 1.55;
+}
+.ai-banner-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+  color: var(--teal-dark);
+  line-height: 1.4;
+}
+.ai-banner-body strong { color: var(--teal-dark); }
+.ai-banner-body a { font-weight: 600; }
 .form label {
   font-size: 13px;
   font-weight: 600;

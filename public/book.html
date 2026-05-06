@@ -63,23 +63,12 @@
             <div class="empty-state" id="empty" hidden>No availability in this month — try the next one.</div>
           </div>
 
-          <form class="form" id="step-form" hidden>
+          <form class="form" id="step-form" hidden novalidate>
             <div>
               <div class="slots-header" id="confirm-when"></div>
               <a href="#" id="back-to-time" class="link-back">← Pick a different time</a>
             </div>
-            <div>
-              <label for="name">Full name</label>
-              <input id="name" name="name" type="text" required autocomplete="name" maxlength="200">
-            </div>
-            <div>
-              <label for="email">Email</label>
-              <input id="email" name="email" type="email" required autocomplete="email" maxlength="320">
-            </div>
-            <div>
-              <label for="notes">Anything you'd like me to know? <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-              <textarea id="notes" name="notes" maxlength="2000" placeholder="Updates, goals, questions, context — anything that helps me prep."></textarea>
-            </div>
+            <div id="form-fields"></div>
             <div id="form-error" class="notice" hidden></div>
             <button type="submit" class="btn" id="submit-btn">Confirm booking</button>
           </form>

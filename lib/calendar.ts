@@ -1,6 +1,6 @@
 import { google, calendar_v3 } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
-import type { BusyInterval } from './types';
+import type { BusyInterval, MeetingType } from './types';
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -25,11 +25,19 @@ function getCalendar(): calendar_v3.Calendar {
   return google.calendar({ version: 'v3', auth: getOAuthClient() });
 }
 
-export function getFreeBusyCalendarIds(): string[] {
+function getBaselineCalendars(): string[] {
   return requireEnv('GOOGLE_FREEBUSY_CALENDARS')
     .split(',')
     .map((id) => id.trim())
     .filter(Boolean);
+}
+
+export function getCalendarsForMeeting(meeting: MeetingType): string[] {
+  const baseline = getBaselineCalendars();
+  const extra = (meeting.additionalFreebusyCalendars ?? [])
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return Array.from(new Set([...baseline, ...extra]));
 }
 
 export function getTargetCalendarId(): string {
@@ -38,25 +46,27 @@ export function getTargetCalendarId(): string {
 
 export async function getBusyIntervals(
   startISO: string,
-  endISO: string
+  endISO: string,
+  calendarIds: string[]
 ): Promise<BusyInterval[]> {
+  if (calendarIds.length === 0) return [];
   const calendar = getCalendar();
-  const ids = getFreeBusyCalendarIds();
   const res = await calendar.freebusy.query({
     requestBody: {
       timeMin: startISO,
       timeMax: endISO,
-      items: ids.map((id) => ({ id })),
+      items: calendarIds.map((id) => ({ id })),
     },
   });
 
   const calendars = res.data.calendars ?? {};
   const merged: BusyInterval[] = [];
-  for (const id of ids) {
+  for (const id of calendarIds) {
     const entry = calendars[id];
     if (entry?.errors?.length) {
       throw new Error(
-        `Free/busy lookup failed for ${id}: ${entry.errors.map((e) => e.reason).join(', ')}`
+        `Free/busy lookup failed for ${id}: ${entry.errors.map((e) => e.reason).join(', ')}. ` +
+          `Make sure that calendar is shared with the OAuth account ('See only free/busy' is enough).`
       );
     }
     for (const b of entry?.busy ?? []) {
@@ -81,8 +91,18 @@ export async function createBookingEvent(params: {
   endISO: string;
   attendeeName: string;
   attendeeEmail: string;
+  additionalAttendees?: string[];
 }): Promise<CreatedEvent> {
   const calendar = getCalendar();
+  const attendees: calendar_v3.Schema$EventAttendee[] = [
+    { email: params.attendeeEmail, displayName: params.attendeeName },
+  ];
+  for (const email of params.additionalAttendees ?? []) {
+    if (email && email !== params.attendeeEmail) {
+      attendees.push({ email });
+    }
+  }
+
   const res = await calendar.events.insert({
     calendarId: getTargetCalendarId(),
     sendUpdates: 'all',
@@ -92,9 +112,7 @@ export async function createBookingEvent(params: {
       description: params.description,
       start: { dateTime: params.startISO },
       end: { dateTime: params.endISO },
-      attendees: [
-        { email: params.attendeeEmail, displayName: params.attendeeName },
-      ],
+      attendees,
       conferenceData: {
         createRequest: {
           requestId: `jmt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

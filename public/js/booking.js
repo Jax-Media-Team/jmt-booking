@@ -38,12 +38,19 @@
     stepForm: document.getElementById('step-form'),
     confirmWhen: document.getElementById('confirm-when'),
     backToTime: document.getElementById('back-to-time'),
-    nameInput: document.getElementById('name'),
-    emailInput: document.getElementById('email'),
-    notesInput: document.getElementById('notes'),
+    formFields: document.getElementById('form-fields'),
     formError: document.getElementById('form-error'),
     submitBtn: document.getElementById('submit-btn'),
   };
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
   function fmtDuration(min) {
     if (min < 60) return min + ' minutes';
@@ -84,11 +91,7 @@
         if (data.meeting.agenda && data.meeting.agenda.length > 0) {
           var agendaHtml = '';
           for (var ai = 0; ai < data.meeting.agenda.length; ai++) {
-            var item = String(data.meeting.agenda[ai])
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;');
-            agendaHtml += '<li>' + item + '</li>';
+            agendaHtml += '<li>' + escapeHtml(data.meeting.agenda[ai]) + '</li>';
           }
           els.agenda.innerHTML = agendaHtml;
           els.agendaBlock.hidden = false;
@@ -98,6 +101,8 @@
           els.prep.hidden = false;
         }
 
+        renderForm(data.meeting.formFields || []);
+
         var today = new Date();
         state.viewYear = today.getFullYear();
         state.viewMonth = today.getMonth();
@@ -106,7 +111,7 @@
       })
       .catch(function (err) {
         console.error(err);
-        els.loading.textContent = 'Could not load availability. Please refresh.';
+        els.loading.textContent = 'Could not load availability — please refresh, or email pcruz@jaxmediateam.com.';
       });
 
     els.prevBtn.addEventListener('click', function () {
@@ -129,6 +134,63 @@
     els.stepForm.addEventListener('submit', onSubmit);
   }
 
+  function renderForm(fields) {
+    var html = '';
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      var fid = 'fld_' + f.name;
+      var labelHtml = escapeHtml(f.label);
+      var helperHtml = f.helperText
+        ? '<div class="field-helper">' + escapeHtml(f.helperText) + '</div>'
+        : '';
+      var requiredAttr = f.required ? ' required' : '';
+      var maxLenAttr = f.maxLength ? ' maxlength="' + f.maxLength + '"' : '';
+      var autoAttr = f.autocomplete ? ' autocomplete="' + escapeHtml(f.autocomplete) + '"' : '';
+      var placeAttr = f.placeholder ? ' placeholder="' + escapeHtml(f.placeholder) + '"' : '';
+
+      html += '<div class="field">';
+      html += '<label for="' + fid + '">' + labelHtml + '</label>';
+      html += helperHtml;
+
+      if (f.type === 'textarea') {
+        html += '<textarea id="' + fid + '" name="' + escapeHtml(f.name) + '"' + requiredAttr + maxLenAttr + placeAttr + '></textarea>';
+      } else if (f.type === 'radio') {
+        html += '<div class="radio-group" data-field="' + escapeHtml(f.name) + '">';
+        var opts = f.options || [];
+        for (var j = 0; j < opts.length; j++) {
+          var optVal = opts[j];
+          html += '<label class="radio-option">';
+          html += '<input type="radio" name="' + escapeHtml(f.name) + '" value="' + escapeHtml(optVal) + '"' + requiredAttr + '>';
+          html += '<span>' + escapeHtml(optVal) + '</span>';
+          html += '</label>';
+        }
+        html += '</div>';
+      } else {
+        var inputType = f.type === 'email' ? 'email' : f.type === 'tel' ? 'tel' : 'text';
+        html += '<input id="' + fid + '" name="' + escapeHtml(f.name) + '" type="' + inputType + '"' + requiredAttr + maxLenAttr + autoAttr + placeAttr + '>';
+      }
+
+      html += '</div>';
+    }
+    els.formFields.innerHTML = html;
+
+    // Wire up radio selected state
+    var groups = els.formFields.querySelectorAll('.radio-group');
+    for (var g = 0; g < groups.length; g++) {
+      groups[g].addEventListener('change', onRadioChange);
+    }
+  }
+
+  function onRadioChange(e) {
+    var group = e.currentTarget;
+    var labels = group.querySelectorAll('.radio-option');
+    for (var i = 0; i < labels.length; i++) {
+      var input = labels[i].querySelector('input');
+      if (input && input.checked) labels[i].classList.add('selected');
+      else labels[i].classList.remove('selected');
+    }
+  }
+
   function renderCalendar() {
     var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     els.monthLabel.textContent = monthNames[state.viewMonth] + ' ' + state.viewYear;
@@ -136,7 +198,6 @@
     var today = new Date();
     var todayKey = localDateKey(today);
     var firstOfMonth = new Date(state.viewYear, state.viewMonth, 1);
-    var firstOfNextMonth = new Date(state.viewYear, state.viewMonth + 1, 1);
     var startWeekday = firstOfMonth.getDay();
     var daysInMonth = new Date(state.viewYear, state.viewMonth + 1, 0).getDate();
 
@@ -159,7 +220,7 @@
       else if (state.daySet.has(key)) { classes += ' available'; hasAny = true; }
       else classes += ' disabled';
       if (key === state.selectedDate) classes += ' selected';
-      html += '<button class="' + classes + '" data-date="' + key + '">' + d + '</button>';
+      html += '<button type="button" class="' + classes + '" data-date="' + key + '">' + d + '</button>';
     }
     els.calendar.innerHTML = html;
 
@@ -200,7 +261,7 @@
     for (var i = 0; i < day.slots.length; i++) {
       var iso = day.slots[i];
       var label = new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-      html += '<button class="slot" data-iso="' + iso + '">' + label + '</button>';
+      html += '<button type="button" class="slot" data-iso="' + iso + '">' + label + '</button>';
     }
     els.slots.innerHTML = html;
     els.slotsArea.hidden = false;
@@ -226,18 +287,45 @@
     els.stepTime.hidden = true;
     els.stepForm.hidden = false;
     els.formError.hidden = true;
-    setTimeout(function () { els.nameInput.focus(); }, 50);
+    var firstInput = els.formFields.querySelector('input, textarea');
+    if (firstInput) setTimeout(function () { firstInput.focus(); }, 50);
+  }
+
+  function collectResponses() {
+    var responses = {};
+    var fields = state.meeting.formFields || [];
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      if (f.type === 'radio') {
+        var checked = els.formFields.querySelector('input[name="' + f.name + '"]:checked');
+        responses[f.name] = checked ? checked.value : '';
+      } else {
+        var el = els.formFields.querySelector('[name="' + f.name + '"]');
+        responses[f.name] = el ? el.value : '';
+      }
+    }
+    return responses;
   }
 
   function onSubmit(e) {
     e.preventDefault();
     els.formError.hidden = true;
+
+    var responses = collectResponses();
+    var fields = state.meeting.formFields || [];
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      if (f.required && !String(responses[f.name] || '').trim()) {
+        els.formError.textContent = f.label + ' is required.';
+        els.formError.hidden = false;
+        return;
+      }
+    }
+
     var payload = {
       meetingSlug: meetingSlug,
       startISO: state.selectedSlot,
-      name: els.nameInput.value.trim(),
-      email: els.emailInput.value.trim(),
-      notes: els.notesInput.value.trim(),
+      responses: responses,
       guestTimezone: guestTz,
     };
     els.submitBtn.disabled = true;

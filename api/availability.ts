@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { DateTime } from 'luxon';
 import { getMeeting } from '../lib/meetings';
-import { getBusyIntervals } from '../lib/calendar';
+import { getBusyIntervals, getCalendarsForMeeting } from '../lib/calendar';
 import { generateAvailableSlots } from '../lib/slots';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -16,8 +16,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const now = DateTime.utc();
-    const horizonEnd = now.setZone(meeting.timezone).plus({ days: meeting.maxHorizonDays }).endOf('day');
-    const busy = await getBusyIntervals(now.toISO()!, horizonEnd.toUTC().toISO()!);
+    const horizonEnd = now
+      .setZone(meeting.timezone)
+      .plus({ days: meeting.maxHorizonDays })
+      .endOf('day');
+    const calendars = getCalendarsForMeeting(meeting);
+    const busy = await getBusyIntervals(now.toISO()!, horizonEnd.toUTC().toISO()!, calendars);
     const days = generateAvailableSlots(meeting, busy, now);
 
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
@@ -32,11 +36,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         durationMinutes: meeting.durationMinutes,
         timezone: meeting.timezone,
         location: meeting.location,
+        formFields: meeting.formFields,
       },
       days,
     });
   } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to load availability';
     console.error('availability error', err);
-    return res.status(500).json({ error: 'Failed to load availability' });
+    return res.status(500).json({ error: message });
   }
 }
