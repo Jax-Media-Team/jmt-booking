@@ -32,7 +32,9 @@ async function main() {
   oauth2.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
   const calendar = google.calendar({ version: 'v3', auth: oauth2 });
 
-  const ids = (process.env.GOOGLE_FREEBUSY_CALENDARS ?? '').split(',').map(s => s.trim()).filter(Boolean);
+  const baselineIds = (process.env.GOOGLE_FREEBUSY_CALENDARS ?? '').split(',').map(s => s.trim()).filter(Boolean);
+  // Also include Mike's calendar (Monthly Recap co-host) in the check
+  const ids = Array.from(new Set([...baselineIds, 'michael@jaxmediateam.com']));
   console.log('Checking calendars:', ids.join(', '));
 
   const now = new Date();
