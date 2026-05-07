@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manage your booking · Jax Media Team</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" type="image/jpeg" href="/img/favicon.jpg" sizes="192x192">
+  <link rel="icon" type="image/jpeg" href="/img/favicon-150.jpg" sizes="32x32">
+  <link rel="apple-touch-icon" href="/img/favicon.jpg">
+</head>
+<body>
+  <main class="shell">
+    <header class="site-header">
+      <a class="site-logo" href="/" aria-label="Jax Media Team home">
+        <img src="/img/logo.jpg" alt="Jax Media Team">
+      </a>
+      <div class="header-meta">with <strong>Jax Media Team</strong></div>
+    </header>
+
+    <div class="card" style="padding: 32px 28px;">
+      <div id="manage-loading" class="loading">Loading your booking…</div>
+
+      <div id="manage-not-found" hidden>
+        <h1 style="font-size:22px;margin:0 0 8px;">We couldn't find that booking</h1>
+        <p class="subtitle" style="margin: 0 0 8px;">The link may be outdated or the meeting has already been cancelled.</p>
+        <p><a href="/">← Schedule a new call</a></p>
+      </div>
+
+      <div id="manage-cancelled" hidden>
+        <div class="success-icon" style="background:#fee2e2;color:#b91c1c;margin-bottom:16px;">✕</div>
+        <h1 style="font-size:22px;margin:0 0 8px;">Booking cancelled</h1>
+        <p class="subtitle" style="margin: 0 0 16px;">A cancellation notice has been emailed to everyone on the invite.</p>
+        <p><a href="/">← Schedule a new call</a></p>
+      </div>
+
+      <div id="manage-detail" hidden>
+        <span class="eyebrow">Manage your booking</span>
+        <h1 id="m-name" style="font-size:22px;"></h1>
+        <p class="subtitle" id="m-when" style="margin: 0 0 18px;"></p>
+
+        <ul class="meta-list" style="margin-top:0;">
+          <li><span class="meta-icon">●</span><span id="m-with">Patrick Cruz, Jax Media Team</span></li>
+          <li id="m-meet-row" hidden><span class="meta-icon">●</span><span id="m-meet"></span></li>
+          <li><span class="meta-icon">●</span><span id="m-booker"></span></li>
+        </ul>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;">
+          <button id="reschedule-btn" type="button" class="btn" style="background:var(--white);color:var(--red);border:1px solid var(--red);">Reschedule</button>
+          <button id="cancel-btn" type="button" class="btn" style="background:var(--white);color:var(--dark);border:1px solid var(--border-strong);">Cancel meeting</button>
+        </div>
+
+        <div id="confirm-cancel" class="notice" hidden style="margin-top:18px;">
+          <p style="margin:0 0 12px;"><strong>Cancel this meeting?</strong> Everyone on the invite will get a notification.</p>
+          <div style="display:flex;gap:8px;">
+            <button id="confirm-cancel-yes" type="button" class="btn" style="padding:8px 16px;font-size:13px;">Yes, cancel</button>
+            <button id="confirm-cancel-no" type="button" class="btn" style="padding:8px 16px;font-size:13px;background:var(--white);color:var(--dark);border:1px solid var(--border-strong);">Keep it</button>
+          </div>
+        </div>
+
+        <div id="manage-error" class="notice" hidden style="margin-top:18px;"></div>
+      </div>
+    </div>
+
+    <footer>&copy; Jax Media Team · <a href="https://jaxmediateam.com">jaxmediateam.com</a></footer>
+  </main>
+  <script src="/js/manage.js"></script>
+</body>
+</html>

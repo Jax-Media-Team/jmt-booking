@@ -203,6 +203,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       endISO: end.toUTC().toISO()!,
       attendeeName: name,
       attendeeEmail: email,
+      meetingSlug: meeting.slug,
       additionalAttendees: meeting.additionalAttendees,
     });
 
@@ -227,6 +228,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         endISO: event.end,
         hangoutLink: event.hangoutLink,
         guestTimezone,
+        eventId: event.id,
       }).catch((err) => console.error('booker confirmation failed', err)),
     ]);
 

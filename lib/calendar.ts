@@ -91,6 +91,7 @@ export async function createBookingEvent(params: {
   endISO: string;
   attendeeName: string;
   attendeeEmail: string;
+  meetingSlug: string;
   additionalAttendees?: string[];
 }): Promise<CreatedEvent> {
   const calendar = getCalendar();
@@ -126,6 +127,15 @@ export async function createBookingEvent(params: {
           { method: 'popup', minutes: 15 },
         ],
       },
+      // Stored privately on the event so /manage and /api/cancel can read them back.
+      extendedProperties: {
+        private: {
+          bookerEmail: params.attendeeEmail.toLowerCase(),
+          bookerName: params.attendeeName,
+          meetingSlug: params.meetingSlug,
+          bookingSource: 'jmt-booking',
+        },
+      },
     },
   });
 
@@ -136,4 +146,57 @@ export async function createBookingEvent(params: {
     start: res.data.start?.dateTime ?? params.startISO,
     end: res.data.end?.dateTime ?? params.endISO,
   };
+}
+
+/** Lookup an event with the metadata required by the manage page. Returns null if missing. */
+export interface ManageableEvent {
+  id: string;
+  summary: string;
+  startISO: string;
+  endISO: string;
+  hangoutLink: string | null;
+  bookerEmail: string;
+  bookerName: string;
+  meetingSlug: string;
+  status: string;
+}
+
+export async function getManageableEvent(
+  eventId: string
+): Promise<ManageableEvent | null> {
+  const calendar = getCalendar();
+  try {
+    const res = await calendar.events.get({
+      calendarId: getTargetCalendarId(),
+      eventId,
+    });
+    const ev = res.data;
+    if (!ev || !ev.id) return null;
+    const priv = ev.extendedProperties?.private ?? {};
+    return {
+      id: ev.id,
+      summary: ev.summary ?? '',
+      startISO: ev.start?.dateTime ?? '',
+      endISO: ev.end?.dateTime ?? '',
+      hangoutLink: ev.hangoutLink ?? null,
+      bookerEmail: (priv.bookerEmail ?? '').toLowerCase(),
+      bookerName: priv.bookerName ?? '',
+      meetingSlug: priv.meetingSlug ?? '',
+      status: ev.status ?? '',
+    };
+  } catch (err: unknown) {
+    const e = err as { code?: number; status?: number };
+    if (e?.code === 404 || e?.status === 404) return null;
+    throw err;
+  }
+}
+
+/** Cancel the event and notify all attendees. */
+export async function cancelEvent(eventId: string): Promise<void> {
+  const calendar = getCalendar();
+  await calendar.events.delete({
+    calendarId: getTargetCalendarId(),
+    eventId,
+    sendUpdates: 'all',
+  });
 }

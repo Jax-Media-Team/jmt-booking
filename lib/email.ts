@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { DateTime } from 'luxon';
 import type { MeetingType, FormField } from './types';
+import { buildManageUrl } from './manage';
 
 let cachedAuth: OAuth2Client | null = null;
 
@@ -268,6 +269,8 @@ export async function sendBookerConfirmation(params: {
   endISO: string;
   hangoutLink: string | null;
   guestTimezone?: string;
+  /** Calendar event id — needed to embed a manage (cancel/reschedule) link. */
+  eventId?: string;
 }): Promise<void> {
   const tz = params.guestTimezone || params.meeting.timezone;
   const when = formatRange(params.startISO, params.endISO, tz);
@@ -319,9 +322,16 @@ export async function sendBookerConfirmation(params: {
       ${agendaBlock}
       ${prepBlock}
 
-      <p style="margin:24px 0 0;font-size:13px;color:#5b6470;font-family:Helvetica,Arial,sans-serif;line-height:1.55;">
-        Need to reschedule or have a question? Just reply to this email.
-      </p>
+      ${
+        params.eventId
+          ? `<p style="margin:24px 0 0;font-size:13px;color:#5b6470;font-family:Helvetica,Arial,sans-serif;line-height:1.55;">
+               Need to make a change?
+               <a href="${escapeHtml(buildManageUrl(params.eventId, params.attendeeEmail))}" style="color:#ed1b24;font-weight:600;">Reschedule or cancel →</a>
+             </p>`
+          : `<p style="margin:24px 0 0;font-size:13px;color:#5b6470;font-family:Helvetica,Arial,sans-serif;line-height:1.55;">
+               Need to reschedule or have a question? Just reply to this email.
+             </p>`
+      }
     </td></tr>
     ${footerBlock()}
   `;

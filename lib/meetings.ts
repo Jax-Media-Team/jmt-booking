@@ -38,9 +38,10 @@ const COMPANY_FIELD: FormField = {
 };
 const PHONE_FIELD: FormField = {
   name: 'phone',
-  label: 'Phone',
+  label: 'Phone (optional)',
+  summaryLabel: 'Phone',
   type: 'tel',
-  required: true,
+  required: false,
   autocomplete: 'tel',
   maxLength: 32,
   placeholder: '(555) 123-4567',
@@ -55,11 +56,11 @@ const NOTES_FIELD_RECAP: FormField = {
 };
 const NOTES_FIELD_DISCOVERY: FormField = {
   name: 'notes',
-  label: "Anything you'd like us to know? (optional)",
+  label: 'Anything else? (optional)',
   type: 'textarea',
   required: false,
   maxLength: 2000,
-  placeholder: 'Tell us more about the business to help us prepare.',
+  placeholder: 'Anything else we should know before the call.',
 };
 
 export const MEETINGS: Record<string, MeetingType> = {
@@ -119,10 +120,10 @@ export const MEETINGS: Record<string, MeetingType> = {
       },
       {
         name: 'source',
-        label: 'How did you hear about us?',
+        label: 'How did you hear about us? (optional)',
         summaryLabel: 'Source',
         type: 'radio',
-        required: true,
+        required: false,
         options: ['Google', 'Referral', 'Social media', 'Other'],
       },
       {
