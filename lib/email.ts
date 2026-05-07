@@ -1,7 +1,7 @@
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { DateTime } from 'luxon';
-import type { MeetingType } from './types';
+import type { MeetingType, FormField } from './types';
 
 let cachedAuth: OAuth2Client | null = null;
 
@@ -33,7 +33,6 @@ function encodeHeader(value: string): string {
   return `=?UTF-8?B?${b64}?=`;
 }
 
-/** Wrap a base64 string at 76 chars per RFC 2045. */
 function wrapBase64(b64: string): string {
   return b64.replace(/(.{76})/g, '$1\r\n');
 }
@@ -45,8 +44,6 @@ function buildRawMessage(opts: {
   html: string;
   replyTo?: string;
 }): string {
-  // RFC 2822 message. Headers must be ASCII; non-ASCII goes through encoded-word.
-  // Body is base64-encoded so any UTF-8 (em dashes, mid-dots, accents, emoji) round-trips cleanly.
   const lines = [
     `From: ${encodeHeader(opts.from)}`,
     `To: ${encodeHeader(opts.to)}`,
@@ -93,8 +90,91 @@ async function sendGmail(opts: {
 function formatRange(startISO: string, endISO: string, tz: string): string {
   const s = DateTime.fromISO(startISO).setZone(tz);
   const e = DateTime.fromISO(endISO).setZone(tz);
-  return `${s.toFormat('cccc, LLLL d, yyyy')} · ${s.toFormat('h:mm a')} – ${e.toFormat('h:mm a ZZZZ')}`;
+  return `${s.toFormat('cccc, LLLL d, yyyy')} · ${s.toFormat('h:mm a')}–${e.toFormat('h:mm a ZZZZ')}`;
 }
+
+function summaryLabelFor(field: FormField): string {
+  if (field.summaryLabel) return field.summaryLabel;
+  return field.label.replace(/\s*\(optional\)\s*$/i, '').trim();
+}
+
+/* ---------- Shared email skeleton ---------- */
+
+function emailShell(inner: string): string {
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Jax Media Team</title></head>
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;-webkit-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f7fa;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+        ${inner}
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+function brandHeader(): string {
+  return `<tr><td align="center" style="padding:0 0 20px;">
+    <a href="https://jaxmediateam.com" style="text-decoration:none;display:inline-block;">
+      <img src="https://jaxmediateam.com/wp-content/uploads/2019/03/logo.jpg"
+           alt="Jax Media Team" width="160" height="auto"
+           style="display:block;border:0;outline:none;text-decoration:none;height:auto;width:160px;border-radius:6px;">
+    </a>
+  </td></tr>`;
+}
+
+function footerBlock(): string {
+  return `<tr><td align="center" style="padding:18px 8px 0;color:#6b7280;font-size:12px;line-height:1.6;font-family:Helvetica,Arial,sans-serif;">
+    Jax Media Team ·
+    <a href="https://jaxmediateam.com" style="color:#6b7280;text-decoration:underline;">jaxmediateam.com</a> ·
+    <a href="mailto:pcruz@jaxmediateam.com" style="color:#6b7280;text-decoration:underline;">pcruz@jaxmediateam.com</a>
+  </td></tr>`;
+}
+
+function summaryTable(rows: { label: string; value: string; multiline?: boolean }[]): string {
+  if (rows.length === 0) return '';
+  const trs = rows
+    .map((r) => {
+      const value = r.multiline
+        ? escapeHtml(r.value).replace(/\n/g, '<br>')
+        : escapeHtml(r.value);
+      return `<tr>
+        <td style="padding:10px 14px;border-bottom:1px solid #eef0f3;color:#5b6470;font-size:13px;font-weight:600;width:38%;vertical-align:top;font-family:Helvetica,Arial,sans-serif;">${escapeHtml(r.label)}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #eef0f3;color:#1a1a1a;font-size:14px;vertical-align:top;font-family:Helvetica,Arial,sans-serif;">${value}</td>
+      </tr>`;
+    })
+    .join('\n');
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+    style="border-collapse:collapse;background:#ffffff;border:1px solid #eef0f3;border-radius:8px;overflow:hidden;">
+    <tbody>${trs}</tbody>
+  </table>`;
+}
+
+function buildResponseRows(
+  meeting: MeetingType,
+  responses: Record<string, string>,
+  guestEmail: string,
+  guestTimezone?: string
+): { label: string; value: string; multiline?: boolean }[] {
+  const rows: { label: string; value: string; multiline?: boolean }[] = [];
+  // Email isn't in the form-fields summary table by default; surface it here so the host can reply directly.
+  rows.push({ label: 'Email', value: guestEmail });
+  for (const field of meeting.formFields) {
+    if (field.name === 'name' || field.name === 'email') continue;
+    const value = responses[field.name];
+    if (!value) continue;
+    rows.push({
+      label: summaryLabelFor(field),
+      value,
+      multiline: field.type === 'textarea',
+    });
+  }
+  if (guestTimezone) rows.push({ label: 'Guest timezone', value: guestTimezone });
+  return rows;
+}
+
+/* ---------- Host notification (to pcruz / michael) ---------- */
 
 export async function sendHostNotification(params: {
   meeting: MeetingType;
@@ -112,83 +192,58 @@ export async function sendHostNotification(params: {
     .filter(Boolean);
   if (recipients.length === 0) {
     console.warn(
-      `[host-notification] no recipients configured for meeting ${params.meeting.slug}; skipping.`
+      `[host-notification] no recipients for ${params.meeting.slug}; skipping.`
     );
     return;
   }
 
   const tz = params.meeting.timezone;
   const when = formatRange(params.startISO, params.endISO, tz);
+  const rows = buildResponseRows(
+    params.meeting,
+    params.responses,
+    params.attendeeEmail,
+    params.guestTimezone
+  );
 
-  // Render every filled-in form response with its label.
-  const responseRows: string[] = [];
-  for (const field of params.meeting.formFields) {
-    if (field.name === 'name' || field.name === 'email') continue;
-    const value = params.responses[field.name];
-    if (!value) continue;
-    if (field.type === 'textarea') {
-      responseRows.push(
-        `<tr>
-           <td style="padding:8px 12px;background:#f5f7fa;border-bottom:1px solid #e5e9ee;font-weight:600;color:#32373c;width:200px;vertical-align:top;">${escapeHtml(field.label)}</td>
-           <td style="padding:8px 12px;border-bottom:1px solid #e5e9ee;color:#1a1a1a;white-space:pre-wrap;">${escapeHtml(value).replace(/\n/g, '<br>')}</td>
-         </tr>`
-      );
-    } else {
-      responseRows.push(
-        `<tr>
-           <td style="padding:8px 12px;background:#f5f7fa;border-bottom:1px solid #e5e9ee;font-weight:600;color:#32373c;width:200px;vertical-align:top;">${escapeHtml(field.label)}</td>
-           <td style="padding:8px 12px;border-bottom:1px solid #e5e9ee;color:#1a1a1a;">${escapeHtml(value)}</td>
-         </tr>`
-      );
-    }
-  }
-  if (params.guestTimezone) {
-    responseRows.push(
-      `<tr>
-         <td style="padding:8px 12px;background:#f5f7fa;border-bottom:1px solid #e5e9ee;font-weight:600;color:#32373c;width:200px;vertical-align:top;">Guest timezone</td>
-         <td style="padding:8px 12px;border-bottom:1px solid #e5e9ee;color:#1a1a1a;">${escapeHtml(params.guestTimezone)}</td>
-       </tr>`
-    );
-  }
+  const ctaButton = params.eventLink
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0;"><tr>
+         <td bgcolor="#ed1b24" style="border-radius:6px;">
+           <a href="${escapeHtml(params.eventLink)}"
+              style="display:inline-block;padding:11px 20px;color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;">
+             View calendar event
+           </a>
+         </td>
+       </tr></table>`
+    : '';
 
   const meetLine = params.hangoutLink
-    ? `<p style="margin:0 0 12px;"><strong>Google Meet:</strong> <a href="${escapeHtml(params.hangoutLink)}" style="color:#ed1b24;">${escapeHtml(params.hangoutLink)}</a></p>`
-    : '';
-  const eventLine = params.eventLink
-    ? `<p style="margin:18px 0 0;"><a href="${escapeHtml(params.eventLink)}" style="color:#ed1b24;font-weight:600;">View calendar event →</a></p>`
+    ? `<p style="margin:0 0 4px;color:#5b6470;font-size:13px;font-family:Helvetica,Arial,sans-serif;">
+         Google Meet: <a href="${escapeHtml(params.hangoutLink)}" style="color:#ed1b24;">${escapeHtml(params.hangoutLink)}</a>
+       </p>`
     : '';
 
-  const html = `<!doctype html>
-<html><body style="margin:0;padding:0;background:#f5f7fa;font-family:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;">
-  <div style="max-width:620px;margin:0 auto;padding:32px 24px;">
-    <div style="background:#ffffff;border:1px solid #e5e9ee;border-radius:14px;padding:28px;box-shadow:0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06);">
-      <div style="border-left:4px solid #ed1b24;padding:6px 0 6px 14px;margin-bottom:20px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;color:#5fa8b0;text-transform:uppercase;">New Booking</div>
-        <h2 style="margin:6px 0 0;font-size:22px;color:#1a1a1a;letter-spacing:-0.01em;">${escapeHtml(params.meeting.name)}</h2>
-      </div>
-
-      <p style="margin:0 0 6px;"><strong>When:</strong> ${escapeHtml(when)}</p>
-      <p style="margin:0 0 6px;"><strong>Guest:</strong> ${escapeHtml(params.attendeeName)} &lt;<a href="mailto:${escapeHtml(params.attendeeEmail)}" style="color:#ed1b24;">${escapeHtml(params.attendeeEmail)}</a>&gt;</p>
+  const inner = `
+    ${brandHeader()}
+    <tr><td style="background:#ffffff;border:1px solid #eef0f3;border-radius:10px;padding:28px 24px;">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.12em;color:#5fa8b0;text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">New Booking</p>
+      <h1 style="margin:0 0 6px;font-size:20px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;font-weight:700;">${escapeHtml(params.meeting.name)}</h1>
+      <p style="margin:0 0 4px;font-size:15px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;"><strong>${escapeHtml(params.attendeeName)}</strong></p>
+      <p style="margin:0 0 4px;color:#5b6470;font-size:14px;font-family:Helvetica,Arial,sans-serif;">${escapeHtml(when)}</p>
       ${meetLine}
 
-      <table role="presentation" style="border-collapse:collapse;width:100%;margin-top:18px;border:1px solid #e5e9ee;border-radius:8px;overflow:hidden;font-size:14px;">
-        <tbody>
-          ${responseRows.join('\n')}
-        </tbody>
-      </table>
+      <div style="height:18px;line-height:18px;font-size:0;">&nbsp;</div>
+      ${summaryTable(rows)}
+      ${ctaButton}
+    </td></tr>
+    ${footerBlock()}
+  `;
 
-      ${eventLine}
-
-      <p style="margin:24px 0 0;color:#5b6470;font-size:12px;">Booked via <a href="https://book.jaxmediateam.com" style="color:#5b6470;">book.jaxmediateam.com</a></p>
-    </div>
-  </div>
-</body></html>`;
-
+  const html = emailShell(inner);
   const subjectDate = DateTime.fromISO(params.startISO).setZone(tz).toFormat('LLL d');
   const company = params.responses.company ? ` — ${params.responses.company}` : '';
   const subject = `New booking · ${params.meeting.name}${company} · ${subjectDate}`;
 
-  // Send to each recipient individually so a single failure doesn't drop the rest.
   await Promise.all(
     recipients.map((to) =>
       sendGmail({
@@ -203,10 +258,8 @@ export async function sendHostNotification(params: {
   );
 }
 
-/**
- * Branded confirmation sent to the person who booked. Logo + website + contact info,
- * confirmation details, what to expect, and a reschedule pointer.
- */
+/* ---------- Booker confirmation (to the person who booked) ---------- */
+
 export async function sendBookerConfirmation(params: {
   meeting: MeetingType;
   attendeeName: string;
@@ -218,78 +271,62 @@ export async function sendBookerConfirmation(params: {
 }): Promise<void> {
   const tz = params.guestTimezone || params.meeting.timezone;
   const when = formatRange(params.startISO, params.endISO, tz);
-  const firstName = (params.attendeeName.split(/\s+/)[0] || params.attendeeName).trim();
+  const firstName =
+    (params.attendeeName.split(/\s+/)[0] || params.attendeeName).trim() || 'there';
 
-  const meetLine = params.hangoutLink
-    ? `<tr><td style="padding:8px 12px;background:#f5f7fa;border-bottom:1px solid #e5e9ee;font-weight:600;color:#32373c;width:140px;">Google Meet</td>
-           <td style="padding:8px 12px;border-bottom:1px solid #e5e9ee;"><a href="${escapeHtml(params.hangoutLink)}" style="color:#ed1b24;">${escapeHtml(params.hangoutLink)}</a></td></tr>`
+  const meetCta = params.hangoutLink
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0;"><tr>
+         <td bgcolor="#ed1b24" style="border-radius:6px;">
+           <a href="${escapeHtml(params.hangoutLink)}"
+              style="display:inline-block;padding:11px 22px;color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;">
+             Join Google Meet
+           </a>
+         </td>
+       </tr></table>`
     : '';
 
   const agendaItems = (params.meeting.agenda ?? [])
-    .map((a) => `<li style="margin-bottom:6px;">${escapeHtml(a)}</li>`)
+    .map(
+      (a) =>
+        `<li style="margin-bottom:6px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;">${escapeHtml(a)}</li>`
+    )
     .join('');
   const agendaBlock = agendaItems
-    ? `<div style="margin:24px 0 8px;">
-         <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;color:#5fa8b0;text-transform:uppercase;margin-bottom:10px;">What we'll cover</div>
-         <ul style="margin:0;padding-left:20px;color:#1a1a1a;">${agendaItems}</ul>
+    ? `<div style="margin:22px 0 0;">
+         <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.12em;color:#5fa8b0;text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">What we'll cover</p>
+         <ul style="margin:0;padding-left:20px;">${agendaItems}</ul>
        </div>`
     : '';
 
   const prepBlock = params.meeting.prepNote
-    ? `<div style="background:#eaf5f7;border-left:3px solid #5fa8b0;padding:14px 16px;border-radius:0 8px 8px 0;margin:18px 0;color:#32373c;font-size:14px;line-height:1.55;">
-         ${escapeHtml(params.meeting.prepNote)}
-       </div>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0;background:#eaf5f7;border-left:3px solid #5fa8b0;border-radius:0 6px 6px 0;">
+         <tr><td style="padding:13px 16px;color:#32373c;font-size:13px;line-height:1.55;font-family:Helvetica,Arial,sans-serif;">
+           ${escapeHtml(params.meeting.prepNote)}
+         </td></tr>
+       </table>`
     : '';
 
-  const html = `<!doctype html>
-<html><body style="margin:0;padding:0;background:#f5f7fa;font-family:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;">
-  <div style="max-width:620px;margin:0 auto;padding:32px 24px;">
-    <div style="text-align:center;margin-bottom:18px;">
-      <a href="https://jaxmediateam.com" style="display:inline-block;text-decoration:none;">
-        <img src="https://jaxmediateam.com/wp-content/uploads/2019/03/logo.jpg" alt="Jax Media Team" width="160" style="display:block;height:auto;border-radius:8px;border:1px solid #e5e9ee;background:#ffffff;padding:6px 10px;">
-      </a>
-    </div>
+  const inner = `
+    ${brandHeader()}
+    <tr><td style="background:#ffffff;border:1px solid #eef0f3;border-radius:10px;padding:28px 24px;">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.12em;color:#5fa8b0;text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">Confirmed</p>
+      <h1 style="margin:0 0 14px;font-size:22px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;font-weight:700;">${escapeHtml(params.meeting.name)}</h1>
 
-    <div style="background:#ffffff;border:1px solid #e5e9ee;border-radius:14px;padding:32px 28px;box-shadow:0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06);">
-      <div style="border-left:4px solid #ed1b24;padding:6px 0 6px 14px;margin-bottom:20px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;color:#5fa8b0;text-transform:uppercase;">Confirmed</div>
-        <h2 style="margin:6px 0 0;font-size:22px;color:#1a1a1a;letter-spacing:-0.01em;">${escapeHtml(params.meeting.name)}</h2>
-      </div>
-
-      <p style="margin:0 0 14px;font-size:15px;">Hi ${escapeHtml(firstName)},</p>
-      <p style="margin:0 0 18px;font-size:14px;line-height:1.55;">You're booked. A calendar invite with the Google Meet link is on its way to your inbox separately. Here are the details:</p>
-
-      <table role="presentation" style="border-collapse:collapse;width:100%;border:1px solid #e5e9ee;border-radius:8px;overflow:hidden;font-size:14px;">
-        <tbody>
-          <tr>
-            <td style="padding:8px 12px;background:#f5f7fa;border-bottom:1px solid #e5e9ee;font-weight:600;color:#32373c;width:140px;">When</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e9ee;">${escapeHtml(when)}</td>
-          </tr>
-          <tr>
-            <td style="padding:8px 12px;background:#f5f7fa;border-bottom:1px solid #e5e9ee;font-weight:600;color:#32373c;width:140px;">With</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e9ee;">Patrick Cruz · Jax Media Team</td>
-          </tr>
-          ${meetLine}
-        </tbody>
-      </table>
-
+      <p style="margin:0 0 12px;font-size:15px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;line-height:1.55;">Hi ${escapeHtml(firstName)}, you're booked.</p>
+      <p style="margin:0 0 6px;font-size:15px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;"><strong>${escapeHtml(when)}</strong></p>
+      <p style="margin:0;color:#5b6470;font-size:13px;font-family:Helvetica,Arial,sans-serif;">A calendar invite is heading to your inbox separately.</p>
+      ${meetCta}
       ${agendaBlock}
       ${prepBlock}
 
-      <p style="margin:24px 0 0;font-size:14px;line-height:1.55;color:#32373c;">
-        Need to reschedule or have a question? Just reply to this email or reach me directly at
-        <a href="mailto:pcruz@jaxmediateam.com" style="color:#ed1b24;">pcruz@jaxmediateam.com</a>.
+      <p style="margin:24px 0 0;font-size:13px;color:#5b6470;font-family:Helvetica,Arial,sans-serif;line-height:1.55;">
+        Need to reschedule or have a question? Just reply to this email.
       </p>
-    </div>
+    </td></tr>
+    ${footerBlock()}
+  `;
 
-    <div style="text-align:center;margin-top:24px;color:#5b6470;font-size:12px;line-height:1.6;">
-      <div style="font-weight:600;color:#32373c;margin-bottom:4px;">Jax Media Team</div>
-      <div><a href="https://jaxmediateam.com" style="color:#5b6470;text-decoration:none;">jaxmediateam.com</a> · <a href="mailto:pcruz@jaxmediateam.com" style="color:#5b6470;text-decoration:none;">pcruz@jaxmediateam.com</a></div>
-      <div style="margin-top:6px;">Booked via <a href="https://book.jaxmediateam.com" style="color:#5b6470;text-decoration:none;">book.jaxmediateam.com</a></div>
-    </div>
-  </div>
-</body></html>`;
-
+  const html = emailShell(inner);
   const subjectDate = DateTime.fromISO(params.startISO).setZone(tz).toFormat('LLL d');
   const subject = `Confirmed · ${params.meeting.name} · ${subjectDate}`;
 

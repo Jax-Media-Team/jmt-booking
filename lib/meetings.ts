@@ -110,6 +110,7 @@ export const MEETINGS: Record<string, MeetingType> = {
       {
         name: 'business_url',
         label: 'Business URL (optional)',
+        summaryLabel: 'Business URL',
         type: 'url',
         required: false,
         autocomplete: 'url',
@@ -119,6 +120,7 @@ export const MEETINGS: Record<string, MeetingType> = {
       {
         name: 'services',
         label: 'How can we help you?',
+        summaryLabel: 'Services',
         type: 'checkbox',
         required: true,
         options: ['SEO', 'PPC', 'Website', 'Social Media'],
@@ -127,6 +129,7 @@ export const MEETINGS: Record<string, MeetingType> = {
       {
         name: 'budget',
         label: 'If you see a clear ROI and believe in the system, would that level of investment be comfortable for you?',
+        summaryLabel: 'Budget OK ($1.5k+/mo)',
         type: 'radio',
         required: true,
         options: ['Yes', 'No'],
@@ -139,6 +142,7 @@ export const MEETINGS: Record<string, MeetingType> = {
       {
         name: 'timeline',
         label: "If you're confident our system will help you get more business, when will you be able to move forward?",
+        summaryLabel: 'Timeline',
         type: 'radio',
         required: true,
         options: ['Immediately', 'Within a week', '2–3 weeks', '1 month+'],

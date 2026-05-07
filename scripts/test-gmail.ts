@@ -1,6 +1,7 @@
 /**
- * One-off: verify the new OAuth refresh token has gmail.send scope by sending
- * a tiny test email to pcruz@jaxmediateam.com.
+ * Sends both emails (host notification + booker confirmation) using realistic data
+ * so you can preview the rendered output. Both go to pcruz@jaxmediateam.com.
+ *
  * Run: npx ts-node scripts/test-gmail.ts
  */
 import * as fs from 'node:fs';
@@ -25,34 +26,86 @@ function loadEnv(): void {
 
 async function main() {
   loadEnv();
-  // Use the production sendHostNotification helper so we test the same code path.
   const email = await import('../lib/email');
   const meetings = await import('../lib/meetings');
-  const meeting = meetings.getMeeting('discovery')!;
+  const discovery = meetings.getMeeting('discovery')!;
+  const recap = meetings.getMeeting('monthly-recap')!;
 
+  const startISO = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+  const endISOdiscovery = new Date(Date.now() + 24 * 3600 * 1000 + 15 * 60 * 1000).toISOString();
+  const endISOrecap = new Date(Date.now() + 24 * 3600 * 1000 + 45 * 60 * 1000).toISOString();
+
+  // 1) Host notification — Discovery
   await email.sendHostNotification({
-    meeting: { ...meeting, notificationRecipients: ['pcruz@jaxmediateam.com'] },
-    attendeeName: 'Test test',
-    attendeeEmail: 'test@example.com',
-    startISO: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-    endISO: new Date(Date.now() + 24 * 3600 * 1000 + 15 * 60 * 1000).toISOString(),
+    meeting: { ...discovery, notificationRecipients: ['pcruz@jaxmediateam.com'] },
+    attendeeName: 'Jane Sample',
+    attendeeEmail: 'jane@samplebusiness.com',
+    startISO,
+    endISO: endISOdiscovery,
     responses: {
-      name: 'Test test',
-      email: 'test@example.com',
+      name: 'Jane Sample',
+      email: 'jane@samplebusiness.com',
       phone: '904-555-0100',
-      company: 'Test test',
+      company: 'Sample Business',
+      business_url: 'https://samplebusiness.com',
+      services: 'SEO, PPC',
       budget: 'Yes',
       timeline: 'Within a week',
-      notes: 'em dash — and middle dot · and accents éàü',
+      notes: 'We just launched a new product line and want to ramp lead flow this quarter — em dash test —, mid-dot ·.',
     },
     hangoutLink: 'https://meet.google.com/abc-defg-hij',
-    eventLink: null,
+    eventLink: 'https://calendar.google.com/calendar/event?eid=test',
     guestTimezone: 'America/New_York',
   });
-  console.log('OK — host notification sent. Check the subject + body for proper UTF-8.');
+
+  // 2) Host notification — Monthly Recap (goes to both pcruz + michael in production; here only pcruz for testing)
+  await email.sendHostNotification({
+    meeting: { ...recap, notificationRecipients: ['pcruz@jaxmediateam.com'] },
+    attendeeName: 'John Existing-Client',
+    attendeeEmail: 'john@existingco.com',
+    startISO,
+    endISO: endISOrecap,
+    responses: {
+      name: 'John Existing-Client',
+      email: 'john@existingco.com',
+      company: 'Existing Co',
+      notes: 'Want to talk about the new landing page test results.',
+    },
+    hangoutLink: 'https://meet.google.com/abc-defg-hij',
+    eventLink: 'https://calendar.google.com/calendar/event?eid=test',
+    guestTimezone: 'America/New_York',
+  });
+
+  // 3) Booker confirmation — Discovery
+  await email.sendBookerConfirmation({
+    meeting: discovery,
+    attendeeName: 'Jane Sample',
+    attendeeEmail: 'pcruz@jaxmediateam.com',
+    startISO,
+    endISO: endISOdiscovery,
+    hangoutLink: 'https://meet.google.com/abc-defg-hij',
+    guestTimezone: 'America/New_York',
+  });
+
+  // 4) Booker confirmation — Monthly Recap
+  await email.sendBookerConfirmation({
+    meeting: recap,
+    attendeeName: 'John Existing-Client',
+    attendeeEmail: 'pcruz@jaxmediateam.com',
+    startISO,
+    endISO: endISOrecap,
+    hangoutLink: 'https://meet.google.com/abc-defg-hij',
+    guestTimezone: 'America/New_York',
+  });
+
+  console.log('Sent 4 test emails to pcruz@jaxmediateam.com:');
+  console.log('  1) Host notification — Discovery');
+  console.log('  2) Host notification — Monthly Recap');
+  console.log('  3) Booker confirmation — Discovery');
+  console.log('  4) Booker confirmation — Monthly Recap');
 }
 
 main().catch((e) => {
-  console.error('Gmail test failed:', e?.message ?? e);
+  console.error('Email test failed:', e?.message ?? e);
   process.exit(1);
 });

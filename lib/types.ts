@@ -17,6 +17,8 @@ export interface FormField {
   disqualifyValues?: string[];
   /** Message shown to the user when their answer disqualifies the booking. */
   disqualifyMessage?: string;
+  /** Compact label used in summary emails. Defaults to `label` minus "(optional)". */
+  summaryLabel?: string;
 }
 
 export interface MeetingType {
