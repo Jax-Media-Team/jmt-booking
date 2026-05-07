@@ -25,6 +25,19 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
+/** RFC 2047 encoded-word for non-ASCII header values. ASCII passes through unchanged. */
+function encodeHeader(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  if (/^[\x00-\x7F]*$/.test(value)) return value;
+  const b64 = Buffer.from(value, 'utf8').toString('base64');
+  return `=?UTF-8?B?${b64}?=`;
+}
+
+/** Wrap a base64 string at 76 chars per RFC 2045. */
+function wrapBase64(b64: string): string {
+  return b64.replace(/(.{76})/g, '$1\r\n');
+}
+
 function buildRawMessage(opts: {
   from: string;
   to: string;
@@ -32,21 +45,22 @@ function buildRawMessage(opts: {
   html: string;
   replyTo?: string;
 }): string {
-  // RFC 2822 message; Gmail API requires base64url-encoded raw.
+  // RFC 2822 message. Headers must be ASCII; non-ASCII goes through encoded-word.
+  // Body is base64-encoded so any UTF-8 (em dashes, mid-dots, accents, emoji) round-trips cleanly.
   const lines = [
-    `From: ${opts.from}`,
-    `To: ${opts.to}`,
+    `From: ${encodeHeader(opts.from)}`,
+    `To: ${encodeHeader(opts.to)}`,
   ];
-  if (opts.replyTo) lines.push(`Reply-To: ${opts.replyTo}`);
+  if (opts.replyTo) lines.push(`Reply-To: ${encodeHeader(opts.replyTo)}`);
   lines.push(
-    `Subject: ${opts.subject}`,
+    `Subject: ${encodeHeader(opts.subject)}`,
     'MIME-Version: 1.0',
     'Content-Type: text/html; charset="UTF-8"',
-    'Content-Transfer-Encoding: 7bit',
+    'Content-Transfer-Encoding: base64',
     '',
-    opts.html
+    wrapBase64(Buffer.from(opts.html, 'utf8').toString('base64'))
   );
-  return Buffer.from(lines.join('\r\n'))
+  return Buffer.from(lines.join('\r\n'), 'utf8')
     .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')

@@ -25,36 +25,31 @@ function loadEnv(): void {
 
 async function main() {
   loadEnv();
-  const { google } = await import('googleapis');
-  const oauth2 = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET
-  );
-  oauth2.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-  const gmail = google.gmail({ version: 'v1', auth: oauth2 });
+  // Use the production sendHostNotification helper so we test the same code path.
+  const email = await import('../lib/email');
+  const meetings = await import('../lib/meetings');
+  const meeting = meetings.getMeeting('discovery')!;
 
-  const raw = Buffer.from(
-    [
-      'From: Jax Media Team <pcruz@jaxmediateam.com>',
-      'To: pcruz@jaxmediateam.com',
-      'Subject: jmt-booking smoke test (delete me)',
-      'MIME-Version: 1.0',
-      'Content-Type: text/html; charset="UTF-8"',
-      '',
-      '<p>This is a one-off test from the jmt-booking app to verify the Gmail send scope is working. You can delete this email.</p>',
-    ].join('\r\n')
-  )
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-
-  const res = await gmail.users.messages.send({
-    userId: 'me',
-    requestBody: { raw },
+  await email.sendHostNotification({
+    meeting: { ...meeting, notificationRecipients: ['pcruz@jaxmediateam.com'] },
+    attendeeName: 'Test test',
+    attendeeEmail: 'test@example.com',
+    startISO: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    endISO: new Date(Date.now() + 24 * 3600 * 1000 + 15 * 60 * 1000).toISOString(),
+    responses: {
+      name: 'Test test',
+      email: 'test@example.com',
+      phone: '904-555-0100',
+      company: 'Test test',
+      budget: 'Yes',
+      timeline: 'Within a week',
+      notes: 'em dash — and middle dot · and accents éàü',
+    },
+    hangoutLink: 'https://meet.google.com/abc-defg-hij',
+    eventLink: null,
+    guestTimezone: 'America/New_York',
   });
-  console.log('OK — Gmail send returned id:', res.data.id);
-  console.log('Check your inbox at pcruz@jaxmediateam.com.');
+  console.log('OK — host notification sent. Check the subject + body for proper UTF-8.');
 }
 
 main().catch((e) => {
