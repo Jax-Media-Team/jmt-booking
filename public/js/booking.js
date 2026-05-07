@@ -2,6 +2,8 @@
   'use strict';
 
   var params = new URLSearchParams(location.search);
+  var isReschedule = params.get('rescheduled') === '1';
+  var origStartISO = params.get('origStart') || '';
   // Slug comes from the URL path (/monthly-recap, /discovery) when Vercel rewrites
   // hide the ?type=… param. Falls back to query string for direct /book.html access.
   function detectMeetingSlug() {
@@ -473,6 +475,8 @@
       responses: responses,
       guestTimezone: guestTz,
       hp_website: hp ? hp.value : '',
+      rescheduled: isReschedule,
+      origStartISO: isReschedule && origStartISO ? origStartISO : undefined,
     };
     els.submitBtn.disabled = true;
     els.submitBtn.textContent = 'Booking…';
@@ -491,6 +495,7 @@
           when: res.body.start || state.selectedSlot,
         });
         if (res.body.hangoutLink) qs.set('meet', res.body.hangoutLink);
+        if (isReschedule) qs.set('rescheduled', '1');
         location.href = '/success.html?' + qs.toString();
       })
       .catch(function (err) {

@@ -36,6 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hangoutLink: event.hangoutLink,
       bookerName: event.bookerName,
       bookerEmail: event.bookerEmail,
+      responses: event.responses,
       meeting: meeting
         ? {
             slug: meeting.slug,

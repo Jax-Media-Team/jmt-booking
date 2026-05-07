@@ -62,8 +62,23 @@
       }
       if (d.meeting && d.meeting.slug) {
         els.rescheduleBtn.addEventListener('click', function () {
-          // Reschedule = cancel current + send to booking page for the same meeting type.
-          confirmCancel(true, '/' + d.meeting.slug);
+          // Reschedule = cancel current + go back to the same meeting type's booking page,
+          // pre-filled with the original responses, marked as a reschedule, with the
+          // original start time so the new emails can show "Was: <old time>".
+          var qs = new URLSearchParams();
+          qs.set('rescheduled', '1');
+          if (d.startISO) qs.set('origStart', d.startISO);
+          // Always include the booker's name + email — these aren't in `responses` because
+          // they're stored separately on the event.
+          if (d.bookerName) qs.set('name', d.bookerName);
+          if (d.bookerEmail) qs.set('email', d.bookerEmail);
+          var responses = d.responses || {};
+          for (var key in responses) {
+            if (Object.prototype.hasOwnProperty.call(responses, key) && responses[key]) {
+              qs.set(key, responses[key]);
+            }
+          }
+          confirmCancel(true, '/' + d.meeting.slug + '?' + qs.toString());
         });
       } else {
         els.rescheduleBtn.style.display = 'none';
@@ -92,7 +107,9 @@
     fetch('/api/cancel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ eid: eid, t: token }),
+      // When this cancel is part of a reschedule, suppress Google's cancellation email
+      // so the booker only gets the "Rescheduled" notification we send next.
+      body: JSON.stringify({ eid: eid, t: token, silent: thenRedirect === true }),
     })
       .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
       .then(function (res) {

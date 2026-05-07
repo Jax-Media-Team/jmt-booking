@@ -140,6 +140,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startISO = String(body.startISO ?? '').trim();
   const responses = (body.responses ?? {}) as Record<string, string>;
   const guestTimezone = body.guestTimezone ? String(body.guestTimezone).slice(0, 64) : undefined;
+  const isReschedule = body.rescheduled === true;
+  const origStartISO = body.origStartISO ? String(body.origStartISO).trim() : undefined;
 
   if (!meetingSlug) return badRequest(res, 'Missing meeting type');
   if (!startISO) return badRequest(res, 'Please pick a date and time before booking.');
@@ -205,6 +207,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       attendeeEmail: email,
       meetingSlug: meeting.slug,
       additionalAttendees: meeting.additionalAttendees,
+      responses: clean,
     });
 
     // Fire-and-forget both emails. Failures log but do not break the booking flow.
@@ -219,6 +222,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         hangoutLink: event.hangoutLink,
         eventLink: event.htmlLink,
         guestTimezone,
+        isReschedule,
+        origStartISO,
       }).catch((err) => console.error('host notification failed', err)),
       sendBookerConfirmation({
         meeting,
@@ -229,6 +234,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         hangoutLink: event.hangoutLink,
         guestTimezone,
         eventId: event.id,
+        isReschedule,
+        origStartISO,
       }).catch((err) => console.error('booker confirmation failed', err)),
     ]);
 

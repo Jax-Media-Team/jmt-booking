@@ -73,4 +73,8 @@ export interface BookingRequest {
   guestTimezone?: string;
   /** Honeypot field — must be empty for the booking to be processed. */
   hp_website?: string;
+  /** True when this booking comes from the manage-page reschedule flow. Affects email copy. */
+  rescheduled?: boolean;
+  /** ISO timestamp of the original meeting being rescheduled. Surfaces in emails as "(was X)". */
+  origStartISO?: string;
 }

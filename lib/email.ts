@@ -187,6 +187,8 @@ export async function sendHostNotification(params: {
   hangoutLink: string | null;
   eventLink: string | null;
   guestTimezone?: string;
+  isReschedule?: boolean;
+  origStartISO?: string;
 }): Promise<void> {
   const recipients = (params.meeting.notificationRecipients ?? [])
     .map((r) => r.trim())
@@ -224,13 +226,21 @@ export async function sendHostNotification(params: {
        </p>`
     : '';
 
+  const eyebrow = params.isReschedule ? 'Rescheduled' : 'New Booking';
+  const eyebrowColor = params.isReschedule ? '#c2410c' : '#5fa8b0';
+  const origLine =
+    params.isReschedule && params.origStartISO
+      ? `<p style="margin:6px 0 0;color:#c2410c;font-size:13px;font-style:italic;font-family:Helvetica,Arial,sans-serif;">Was: ${escapeHtml(formatRange(params.origStartISO, params.origStartISO, tz).split(' · ')[0])} · ${escapeHtml(DateTime.fromISO(params.origStartISO).setZone(tz).toFormat('h:mm a ZZZZ'))}</p>`
+      : '';
+
   const inner = `
     ${brandHeader()}
     <tr><td style="background:#ffffff;border:1px solid #eef0f3;border-radius:10px;padding:28px 24px;">
-      <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.12em;color:#5fa8b0;text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">New Booking</p>
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.12em;color:${eyebrowColor};text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">${eyebrow}</p>
       <h1 style="margin:0 0 6px;font-size:20px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;font-weight:700;">${escapeHtml(params.meeting.name)}</h1>
       <p style="margin:0 0 4px;font-size:15px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;"><strong>${escapeHtml(params.attendeeName)}</strong></p>
       <p style="margin:0 0 4px;color:#5b6470;font-size:14px;font-family:Helvetica,Arial,sans-serif;">${escapeHtml(when)}</p>
+      ${origLine}
       ${meetLine}
 
       <div style="height:18px;line-height:18px;font-size:0;">&nbsp;</div>
@@ -243,7 +253,8 @@ export async function sendHostNotification(params: {
   const html = emailShell(inner);
   const subjectDate = DateTime.fromISO(params.startISO).setZone(tz).toFormat('LLL d');
   const company = params.responses.company ? ` — ${params.responses.company}` : '';
-  const subject = `New booking · ${params.meeting.name}${company} · ${subjectDate}`;
+  const verb = params.isReschedule ? 'Rescheduled' : 'New booking';
+  const subject = `${verb} · ${params.meeting.name}${company} · ${subjectDate}`;
 
   await Promise.all(
     recipients.map((to) =>
@@ -271,6 +282,8 @@ export async function sendBookerConfirmation(params: {
   guestTimezone?: string;
   /** Calendar event id — needed to embed a manage (cancel/reschedule) link. */
   eventId?: string;
+  isReschedule?: boolean;
+  origStartISO?: string;
 }): Promise<void> {
   const tz = params.guestTimezone || params.meeting.timezone;
   const when = formatRange(params.startISO, params.endISO, tz);
@@ -309,14 +322,25 @@ export async function sendBookerConfirmation(params: {
        </table>`
     : '';
 
+  const eyebrow = params.isReschedule ? 'Rescheduled' : 'Confirmed';
+  const eyebrowColor = params.isReschedule ? '#c2410c' : '#5fa8b0';
+  const greeting = params.isReschedule
+    ? `Hi ${escapeHtml(firstName)}, your meeting has been rescheduled.`
+    : `Hi ${escapeHtml(firstName)}, you're booked.`;
+  const origLine =
+    params.isReschedule && params.origStartISO
+      ? `<p style="margin:0 0 6px;color:#c2410c;font-size:13px;font-style:italic;font-family:Helvetica,Arial,sans-serif;">Was: ${escapeHtml(formatRange(params.origStartISO, params.origStartISO, tz).split(' · ')[0])} · ${escapeHtml(DateTime.fromISO(params.origStartISO).setZone(tz).toFormat('h:mm a ZZZZ'))}</p>`
+      : '';
+
   const inner = `
     ${brandHeader()}
     <tr><td style="background:#ffffff;border:1px solid #eef0f3;border-radius:10px;padding:28px 24px;">
-      <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.12em;color:#5fa8b0;text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">Confirmed</p>
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.12em;color:${eyebrowColor};text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">${eyebrow}</p>
       <h1 style="margin:0 0 14px;font-size:22px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;font-weight:700;">${escapeHtml(params.meeting.name)}</h1>
 
-      <p style="margin:0 0 12px;font-size:15px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;line-height:1.55;">Hi ${escapeHtml(firstName)}, you're booked.</p>
+      <p style="margin:0 0 12px;font-size:15px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;line-height:1.55;">${greeting}</p>
       <p style="margin:0 0 6px;font-size:15px;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;"><strong>${escapeHtml(when)}</strong></p>
+      ${origLine}
       <p style="margin:0;color:#5b6470;font-size:13px;font-family:Helvetica,Arial,sans-serif;">A calendar invite is heading to your inbox separately.</p>
       ${meetCta}
       ${agendaBlock}
@@ -338,7 +362,8 @@ export async function sendBookerConfirmation(params: {
 
   const html = emailShell(inner);
   const subjectDate = DateTime.fromISO(params.startISO).setZone(tz).toFormat('LLL d');
-  const subject = `Confirmed · ${params.meeting.name} · ${subjectDate}`;
+  const subjectVerb = params.isReschedule ? 'Rescheduled' : 'Confirmed';
+  const subject = `${subjectVerb} · ${params.meeting.name} · ${subjectDate}`;
 
   await sendGmail({
     to: params.attendeeEmail,

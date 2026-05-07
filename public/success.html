@@ -24,7 +24,7 @@
 
     <div class="card success-card">
       <div class="success-icon">✓</div>
-      <h1>You're booked.</h1>
+      <h1 id="success-headline">You're booked.</h1>
       <p class="subtitle" style="margin: 8px auto 16px;" id="confirm-line">A calendar invite is on its way to your inbox.</p>
       <p class="success-detail"><strong id="when-line"></strong></p>
       <p class="success-detail" id="meet-line"></p>
@@ -38,6 +38,12 @@
       var p = new URLSearchParams(location.search);
       var when = p.get('when');
       var hangout = p.get('meet');
+      var isReschedule = p.get('rescheduled') === '1';
+      if (isReschedule) {
+        document.getElementById('success-headline').textContent = "You're rescheduled.";
+        document.title = "You're rescheduled · Jax Media Team";
+        document.getElementById('confirm-line').textContent = 'An updated calendar invite is on its way to your inbox.';
+      }
       if (when) {
         try {
           var d = new Date(when);

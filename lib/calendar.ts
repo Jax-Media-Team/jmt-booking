@@ -93,6 +93,8 @@ export async function createBookingEvent(params: {
   attendeeEmail: string;
   meetingSlug: string;
   additionalAttendees?: string[];
+  /** Form responses to persist on the event so reschedule can pre-fill them. */
+  responses?: Record<string, string>;
 }): Promise<CreatedEvent> {
   const calendar = getCalendar();
   const attendees: calendar_v3.Schema$EventAttendee[] = [
@@ -127,14 +129,17 @@ export async function createBookingEvent(params: {
           { method: 'popup', minutes: 15 },
         ],
       },
-      // Stored privately on the event so /manage and /api/cancel can read them back.
+      // Stored privately on the event so /manage, /api/cancel, and the reschedule
+      // flow can read them back. Each value is truncated to 1000 chars to fit
+      // Google's per-value limit; large `notes` are the only field that may hit it.
       extendedProperties: {
-        private: {
+        private: buildExtendedProperties({
           bookerEmail: params.attendeeEmail.toLowerCase(),
           bookerName: params.attendeeName,
           meetingSlug: params.meetingSlug,
           bookingSource: 'jmt-booking',
-        },
+          responses: params.responses ?? {},
+        }),
       },
     },
   });
@@ -148,6 +153,43 @@ export async function createBookingEvent(params: {
   };
 }
 
+/** Build the extendedProperties.private map, splitting `responses` into resp_<name> keys
+ *  and truncating each value to a safe size. */
+function buildExtendedProperties(input: {
+  bookerEmail: string;
+  bookerName: string;
+  meetingSlug: string;
+  bookingSource: string;
+  responses: Record<string, string>;
+}): Record<string, string> {
+  const truncate = (s: string): string =>
+    typeof s === 'string' && s.length > 1000 ? s.slice(0, 1000) : s;
+  const out: Record<string, string> = {
+    bookerEmail: truncate(input.bookerEmail),
+    bookerName: truncate(input.bookerName),
+    meetingSlug: truncate(input.meetingSlug),
+    bookingSource: truncate(input.bookingSource),
+  };
+  for (const [key, value] of Object.entries(input.responses ?? {})) {
+    if (!value) continue;
+    if (key === 'name' || key === 'email') continue; // covered by bookerName/bookerEmail
+    // Google extendedProperties keys must be 1-44 chars; resp_<name> stays well under.
+    const safeKey = `resp_${key}`.slice(0, 44);
+    out[safeKey] = truncate(value);
+  }
+  return out;
+}
+
+function parseResponses(priv: Record<string, string> | undefined | null): Record<string, string> {
+  const responses: Record<string, string> = {};
+  if (!priv) return responses;
+  for (const [key, value] of Object.entries(priv)) {
+    if (!key.startsWith('resp_')) continue;
+    responses[key.slice(5)] = value;
+  }
+  return responses;
+}
+
 /** Lookup an event with the metadata required by the manage page. Returns null if missing. */
 export interface ManageableEvent {
   id: string;
@@ -159,6 +201,7 @@ export interface ManageableEvent {
   bookerName: string;
   meetingSlug: string;
   status: string;
+  responses: Record<string, string>;
 }
 
 export async function getManageableEvent(
@@ -183,6 +226,7 @@ export async function getManageableEvent(
       bookerName: priv.bookerName ?? '',
       meetingSlug: priv.meetingSlug ?? '',
       status: ev.status ?? '',
+      responses: parseResponses(priv as Record<string, string>),
     };
   } catch (err: unknown) {
     const e = err as { code?: number; status?: number };
@@ -191,12 +235,14 @@ export async function getManageableEvent(
   }
 }
 
-/** Cancel the event and notify all attendees. */
-export async function cancelEvent(eventId: string): Promise<void> {
+/** Cancel the event. Pass `silent: true` to skip Google's cancellation emails — used
+ *  when the cancel is part of a reschedule, so we don't send "cancelled" right before
+ *  "rescheduled". */
+export async function cancelEvent(eventId: string, opts?: { silent?: boolean }): Promise<void> {
   const calendar = getCalendar();
   await calendar.events.delete({
     calendarId: getTargetCalendarId(),
     eventId,
-    sendUpdates: 'all',
+    sendUpdates: opts?.silent ? 'none' : 'all',
   });
 }

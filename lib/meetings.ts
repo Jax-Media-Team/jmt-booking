@@ -95,9 +95,9 @@ export const MEETINGS: Record<string, MeetingType> = {
     longDescription:
       'A short, no-pressure intro to learn about your business, your marketing goals, and the challenges you are running into. If we are a fit, we will outline a few next steps.',
     agenda: [
-      'A quick walk through what you are working on',
-      'Your goals and the obstacles in the way',
-      'Where Jax Media Team can help — and where we cannot',
+      'Getting to know you and your business',
+      'Understanding your goals and where we can help',
+      'Whether Jax Media Team is the right fit',
     ],
     durationMinutes: 15,
     eventTitle: 'Discovery Call w/ {company}',

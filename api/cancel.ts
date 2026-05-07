@@ -5,6 +5,8 @@ import { verifyManageToken } from '../lib/manage';
 interface CancelRequest {
   eid?: string;
   t?: string;
+  /** When true, suppresses Google's cancellation emails. Used by the reschedule flow. */
+  silent?: boolean;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -28,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    await cancelEvent(eid);
+    await cancelEvent(eid, { silent: body.silent === true });
     return res.status(200).json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to cancel event';
