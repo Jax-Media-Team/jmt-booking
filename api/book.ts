@@ -13,6 +13,21 @@ function badRequest(res: VercelResponse, msg: string) {
   return res.status(400).json({ error: msg });
 }
 
+function isShowIfSatisfied(
+  meeting: MeetingType,
+  field: FormField,
+  responses: Record<string, string>
+): boolean {
+  if (!field.showIf) return true;
+  const parentRaw = (responses[field.showIf.field] ?? '').trim();
+  if (!parentRaw) return false;
+  const parentValues = parentRaw.split(',').map((s) => s.trim()).filter(Boolean);
+  for (const v of parentValues) {
+    if (field.showIf.valueIncludes.includes(v)) return true;
+  }
+  return false;
+}
+
 function validateResponses(
   meeting: MeetingType,
   responses: Record<string, string>
@@ -21,6 +36,11 @@ function validateResponses(
   for (const field of meeting.formFields) {
     const raw = responses[field.name];
     const value = typeof raw === 'string' ? raw.trim() : '';
+    // Skip required-check for fields whose showIf condition isn't satisfied.
+    if (field.showIf && !isShowIfSatisfied(meeting, field, responses)) {
+      clean[field.name] = '';
+      continue;
+    }
     if (!value) {
       if (field.required) return { ok: false, error: `${field.label} is required` };
       clean[field.name] = '';
@@ -130,6 +150,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const validation = validateResponses(meeting, responses);
   if (!validation.ok) return badRequest(res, validation.error);
   const { clean } = validation;
+
+  // Fold conditional "Other" follow-up answers into the parent value:
+  //   source='Other' + source_other='Podcast'  →  source='Other (Podcast)'
+  //   services='SEO,Other' + services_other='Email'  →  services='SEO, Other (Email)'
+  for (const field of meeting.formFields) {
+    if (!field.showIf) continue;
+    const followUpValue = clean[field.name];
+    if (!followUpValue) continue;
+    const parentName = field.showIf.field;
+    const parentValue = clean[parentName];
+    if (!parentValue) continue;
+    const triggers = field.showIf.valueIncludes;
+    const merged = parentValue
+      .split(',')
+      .map((v) => v.trim())
+      .map((v) => (triggers.includes(v) ? `${v} (${followUpValue})` : v))
+      .join(', ');
+    clean[parentName] = merged;
+    delete clean[field.name];
+  }
 
   const name = clean.name;
   const email = clean.email.toLowerCase();

@@ -148,7 +148,10 @@
     for (var i = 0; i < fields.length; i++) {
       var f = fields[i];
       var fid = 'fld_' + f.name;
-      var labelHtml = escapeHtml(f.label) + (f.required ? ' <span class="required-mark" aria-hidden="true">*</span>' : '');
+      var labelHtml = escapeHtml(f.label) + (f.required ? '&nbsp;<span class="required-mark" aria-hidden="true">*</span>' : '');
+      var showIfAttr = f.showIf
+        ? ' data-show-if-field="' + escapeHtml(f.showIf.field) + '" data-show-if-values="' + escapeHtml((f.showIf.valueIncludes || []).join('|')) + '"'
+        : '';
       var helperHtml = f.helperText
         ? '<div class="field-helper">' + escapeHtml(f.helperText) + '</div>'
         : '';
@@ -157,7 +160,7 @@
       var autoAttr = f.autocomplete ? ' autocomplete="' + escapeHtml(f.autocomplete) + '"' : '';
       var placeAttr = f.placeholder ? ' placeholder="' + escapeHtml(f.placeholder) + '"' : '';
 
-      html += '<div class="field">';
+      html += '<div class="field"' + showIfAttr + '>';
       html += '<label for="' + fid + '">' + labelHtml + '</label>';
       html += helperHtml;
 
@@ -196,10 +199,60 @@
     }
     els.formFields.innerHTML = html;
 
-    // Wire up radio selected state
+    // Wire up radio/checkbox selected state
     var groups = els.formFields.querySelectorAll('.radio-group');
     for (var g = 0; g < groups.length; g++) {
       groups[g].addEventListener('change', onRadioChange);
+    }
+    updateConditionalFields();
+  }
+
+  function isFieldHidden(fieldName) {
+    var input = els.formFields.querySelector('[name="' + fieldName + '"]');
+    if (!input) return false;
+    var container = input.closest('.field');
+    return !!(container && container.classList.contains('hidden'));
+  }
+
+  function getCurrentValue(fieldName) {
+    var radios = els.formFields.querySelectorAll('input[type="radio"][name="' + fieldName + '"]:checked');
+    if (radios.length > 0) return radios[0].value;
+    var boxes = els.formFields.querySelectorAll('input[type="checkbox"][name="' + fieldName + '"]:checked');
+    if (boxes.length > 0) {
+      var vals = [];
+      for (var i = 0; i < boxes.length; i++) vals.push(boxes[i].value);
+      return vals.join(',');
+    }
+    var el = els.formFields.querySelector('[name="' + fieldName + '"]');
+    return el ? el.value : '';
+  }
+
+  function updateConditionalFields() {
+    var conditionals = els.formFields.querySelectorAll('.field[data-show-if-field]');
+    for (var i = 0; i < conditionals.length; i++) {
+      var fieldEl = conditionals[i];
+      var parentName = fieldEl.getAttribute('data-show-if-field');
+      var triggers = (fieldEl.getAttribute('data-show-if-values') || '').split('|');
+      var parentValue = getCurrentValue(parentName);
+      var parentValues = parentValue ? parentValue.split(',').map(function (s) { return s.trim(); }) : [];
+      var matches = false;
+      for (var t = 0; t < triggers.length; t++) {
+        if (parentValues.indexOf(triggers[t]) !== -1) { matches = true; break; }
+      }
+      if (matches) {
+        fieldEl.classList.remove('hidden');
+      } else {
+        fieldEl.classList.add('hidden');
+        // Clear the hidden field so a stale value never gets submitted
+        var inputs = fieldEl.querySelectorAll('input, textarea');
+        for (var k = 0; k < inputs.length; k++) {
+          if (inputs[k].type === 'radio' || inputs[k].type === 'checkbox') {
+            inputs[k].checked = false;
+          } else {
+            inputs[k].value = '';
+          }
+        }
+      }
     }
   }
 
@@ -239,6 +292,7 @@
       if (input && input.checked) labels[i].classList.add('selected');
       else labels[i].classList.remove('selected');
     }
+    updateConditionalFields();
     updateDisqualifyState();
   }
 
@@ -396,6 +450,7 @@
     var fields = state.meeting.formFields || [];
     for (var i = 0; i < fields.length; i++) {
       var f = fields[i];
+      if (f.showIf && isFieldHidden(f.name)) continue;
       if (f.required && !String(responses[f.name] || '').trim()) {
         els.formError.textContent = f.label + ' is required.';
         els.formError.hidden = false;

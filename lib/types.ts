@@ -19,6 +19,12 @@ export interface FormField {
   disqualifyMessage?: string;
   /** Compact label used in summary emails. Defaults to `label` minus "(optional)". */
   summaryLabel?: string;
+  /** Only render + validate this field when the named field's value is in the list.
+   *  For checkbox parents, the parent value is treated as comma-separated and any match counts. */
+  showIf?: {
+    field: string;
+    valueIncludes: string[];
+  };
 }
 
 export interface MeetingType {

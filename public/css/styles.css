@@ -346,6 +346,7 @@ h2 { font-size: 18px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em
 /* Form */
 .form { display: grid; gap: 14px; margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border); }
 .form .field { display: block; }
+.form .field.hidden { display: none; }
 .form label { margin-bottom: 4px; }
 .required-mark {
   color: var(--red);
