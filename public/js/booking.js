@@ -163,19 +163,25 @@
 
       if (f.type === 'textarea') {
         html += '<textarea id="' + fid + '" name="' + escapeHtml(f.name) + '"' + requiredAttr + maxLenAttr + placeAttr + '></textarea>';
-      } else if (f.type === 'radio') {
-        html += '<div class="radio-group" data-field="' + escapeHtml(f.name) + '">';
+      } else if (f.type === 'radio' || f.type === 'checkbox') {
+        var inputKind = f.type;
+        html += '<div class="radio-group" data-field="' + escapeHtml(f.name) + '" data-input-kind="' + inputKind + '">';
         var opts = f.options || [];
         for (var j = 0; j < opts.length; j++) {
           var optVal = opts[j];
+          // For radio: HTML required attr applies; for checkbox group we validate in JS.
+          var optRequired = inputKind === 'radio' ? requiredAttr : '';
           html += '<label class="radio-option">';
-          html += '<input type="radio" name="' + escapeHtml(f.name) + '" value="' + escapeHtml(optVal) + '"' + requiredAttr + '>';
+          html += '<input type="' + inputKind + '" name="' + escapeHtml(f.name) + '" value="' + escapeHtml(optVal) + '"' + optRequired + '>';
           html += '<span>' + escapeHtml(optVal) + '</span>';
           html += '</label>';
         }
         html += '</div>';
       } else {
-        var inputType = f.type === 'email' ? 'email' : f.type === 'tel' ? 'tel' : 'text';
+        var inputType = f.type === 'email' ? 'email'
+          : f.type === 'tel' ? 'tel'
+          : f.type === 'url' ? 'url'
+          : 'text';
         html += '<input id="' + fid + '" name="' + escapeHtml(f.name) + '" type="' + inputType + '"' + requiredAttr + maxLenAttr + autoAttr + placeAttr + '>';
       }
 
@@ -202,19 +208,21 @@
       var f = fields[i];
       var val = params.get(f.name);
       if (!val) continue;
-      if (f.type === 'radio') {
-        var radio = els.formFields.querySelector('input[name="' + f.name + '"][value="' + val.replace(/"/g, '\\"') + '"]');
-        if (radio) {
-          radio.checked = true;
-          var group = radio.closest('.radio-group');
-          if (group) {
-            var labels = group.querySelectorAll('.radio-option');
-            for (var k = 0; k < labels.length; k++) {
-              var input = labels[k].querySelector('input');
-              if (input && input.checked) labels[k].classList.add('selected');
-              else labels[k].classList.remove('selected');
-            }
-          }
+      if (f.type === 'radio' || f.type === 'checkbox') {
+        var values = f.type === 'checkbox'
+          ? val.split(',').map(function (s) { return s.trim(); }).filter(Boolean)
+          : [val];
+        var group = els.formFields.querySelector('.radio-group[data-field="' + f.name + '"]');
+        if (!group) continue;
+        for (var vi = 0; vi < values.length; vi++) {
+          var input = group.querySelector('input[name="' + f.name + '"][value="' + values[vi].replace(/"/g, '\\"') + '"]');
+          if (input) input.checked = true;
+        }
+        var labels = group.querySelectorAll('.radio-option');
+        for (var k = 0; k < labels.length; k++) {
+          var inp = labels[k].querySelector('input');
+          if (inp && inp.checked) labels[k].classList.add('selected');
+          else labels[k].classList.remove('selected');
         }
       } else {
         var el = els.formFields.querySelector('[name="' + f.name + '"]');
@@ -367,6 +375,11 @@
       if (f.type === 'radio') {
         var checked = els.formFields.querySelector('input[name="' + f.name + '"]:checked');
         responses[f.name] = checked ? checked.value : '';
+      } else if (f.type === 'checkbox') {
+        var boxes = els.formFields.querySelectorAll('input[name="' + f.name + '"]:checked');
+        var vals = [];
+        for (var bi = 0; bi < boxes.length; bi++) vals.push(boxes[bi].value);
+        responses[f.name] = vals.join(', ');
       } else {
         var el = els.formFields.querySelector('[name="' + f.name + '"]');
         responses[f.name] = el ? el.value : '';

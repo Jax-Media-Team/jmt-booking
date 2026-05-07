@@ -45,13 +45,21 @@ const PHONE_FIELD: FormField = {
   maxLength: 32,
   placeholder: '(555) 123-4567',
 };
-const NOTES_FIELD: FormField = {
+const NOTES_FIELD_RECAP: FormField = {
   name: 'notes',
   label: "Anything you'd like me to know? (optional)",
   type: 'textarea',
   required: false,
   maxLength: 2000,
   placeholder: 'Updates, goals, questions, context — anything that helps me prep.',
+};
+const NOTES_FIELD_DISCOVERY: FormField = {
+  name: 'notes',
+  label: "Anything you'd like me to know? (optional)",
+  type: 'textarea',
+  required: false,
+  maxLength: 2000,
+  placeholder: 'Tell me more about the business to help us prepare.',
 };
 
 export const MEETINGS: Record<string, MeetingType> = {
@@ -75,7 +83,7 @@ export const MEETINGS: Record<string, MeetingType> = {
     additionalFreebusyCalendars: ['michael@jaxmediateam.com'],
     additionalAttendees: ['michael@jaxmediateam.com'],
     notificationRecipients: ['pcruz@jaxmediateam.com', 'michael@jaxmediateam.com'],
-    formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD],
+    formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD_RECAP],
   },
 
   'discovery': {
@@ -100,6 +108,23 @@ export const MEETINGS: Record<string, MeetingType> = {
       PHONE_FIELD,
       COMPANY_FIELD,
       {
+        name: 'business_url',
+        label: 'Business URL (optional)',
+        type: 'url',
+        required: false,
+        autocomplete: 'url',
+        maxLength: 500,
+        placeholder: 'https://yourbusiness.com',
+      },
+      {
+        name: 'services',
+        label: 'How can we help you?',
+        type: 'checkbox',
+        required: true,
+        options: ['SEO', 'PPC', 'Website', 'Social Media'],
+        helperText: 'Pick anything you might be interested in — you can choose more than one.',
+      },
+      {
         name: 'budget',
         label: 'If you see a clear ROI and believe in the system, would that level of investment be comfortable for you?',
         type: 'radio',
@@ -118,7 +143,7 @@ export const MEETINGS: Record<string, MeetingType> = {
         required: true,
         options: ['Immediately', 'Within a week', '2–3 weeks', '1 month+'],
       },
-      NOTES_FIELD,
+      NOTES_FIELD_DISCOVERY,
     ],
   },
 };

@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import { getMeeting } from '../lib/meetings';
 import { getBusyIntervals, getCalendarsForMeeting, createBookingEvent } from '../lib/calendar';
 import { isStillAvailable } from '../lib/slots';
-import { sendHostNotification } from '../lib/email';
+import { sendHostNotification, sendBookerConfirmation } from '../lib/email';
 import type { BookingRequest, MeetingType, FormField } from '../lib/types';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -40,6 +40,25 @@ function validateResponses(
       const opts = field.options ?? [];
       if (!opts.includes(value)) {
         return { ok: false, error: `${field.label}: pick one of the options` };
+      }
+    }
+    if (field.type === 'checkbox') {
+      const opts = field.options ?? [];
+      const picked = value.split(',').map((s) => s.trim()).filter(Boolean);
+      for (const p of picked) {
+        if (!opts.includes(p)) {
+          return { ok: false, error: `${field.label}: invalid option "${p}"` };
+        }
+      }
+    }
+    if (field.type === 'url') {
+      try {
+        const u = new URL(value.startsWith('http') ? value : `https://${value}`);
+        if (!['http:', 'https:'].includes(u.protocol)) {
+          return { ok: false, error: `${field.label} must be a valid URL` };
+        }
+      } catch {
+        return { ok: false, error: `${field.label} must be a valid URL` };
       }
     }
     if (field.disqualifyValues && field.disqualifyValues.includes(value)) {
@@ -147,8 +166,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       additionalAttendees: meeting.additionalAttendees,
     });
 
-    try {
-      await sendHostNotification({
+    // Fire-and-forget both emails. Failures log but do not break the booking flow.
+    await Promise.all([
+      sendHostNotification({
         meeting,
         attendeeName: name,
         attendeeEmail: email,
@@ -158,10 +178,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         hangoutLink: event.hangoutLink,
         eventLink: event.htmlLink,
         guestTimezone,
-      });
-    } catch (mailErr) {
-      console.error('host notification failed', mailErr);
-    }
+      }).catch((err) => console.error('host notification failed', err)),
+      sendBookerConfirmation({
+        meeting,
+        attendeeName: name,
+        attendeeEmail: email,
+        startISO: event.start,
+        endISO: event.end,
+        hangoutLink: event.hangoutLink,
+        guestTimezone,
+      }).catch((err) => console.error('booker confirmation failed', err)),
+    ]);
 
     return res.status(200).json({
       ok: true,

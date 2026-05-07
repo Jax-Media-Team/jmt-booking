@@ -1,4 +1,4 @@
-export type FieldType = 'text' | 'email' | 'tel' | 'textarea' | 'radio';
+export type FieldType = 'text' | 'email' | 'tel' | 'url' | 'textarea' | 'radio' | 'checkbox';
 
 export interface FormField {
   /** Form key. Use 'name' for booker name (required) and 'email' for booker email (required). */
