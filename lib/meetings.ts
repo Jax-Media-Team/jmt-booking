@@ -55,11 +55,11 @@ const NOTES_FIELD_RECAP: FormField = {
 };
 const NOTES_FIELD_DISCOVERY: FormField = {
   name: 'notes',
-  label: "Anything you'd like me to know? (optional)",
+  label: "Anything you'd like us to know? (optional)",
   type: 'textarea',
   required: false,
   maxLength: 2000,
-  placeholder: 'Tell me more about the business to help us prepare.',
+  placeholder: 'Tell us more about the business to help us prepare.',
 };
 
 export const MEETINGS: Record<string, MeetingType> = {
