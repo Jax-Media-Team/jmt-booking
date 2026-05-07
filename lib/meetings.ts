@@ -74,6 +74,7 @@ export const MEETINGS: Record<string, MeetingType> = {
     eventTitle: 'Monthly Recap Call w/ {company}',
     additionalFreebusyCalendars: ['michael@jaxmediateam.com'],
     additionalAttendees: ['michael@jaxmediateam.com'],
+    notificationRecipients: ['pcruz@jaxmediateam.com', 'michael@jaxmediateam.com'],
     formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD],
   },
 
@@ -92,6 +93,7 @@ export const MEETINGS: Record<string, MeetingType> = {
     ],
     durationMinutes: 15,
     eventTitle: 'Discovery Call w/ {company}',
+    notificationRecipients: ['pcruz@jaxmediateam.com'],
     formFields: [
       NAME_FIELD,
       EMAIL_FIELD,

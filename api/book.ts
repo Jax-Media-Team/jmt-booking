@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import { getMeeting } from '../lib/meetings';
 import { getBusyIntervals, getCalendarsForMeeting, createBookingEvent } from '../lib/calendar';
 import { isStillAvailable } from '../lib/slots';
-import { sendBookingConfirmation } from '../lib/email';
+import { sendHostNotification } from '../lib/email';
 import type { BookingRequest, MeetingType, FormField } from '../lib/types';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -140,18 +140,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     try {
-      await sendBookingConfirmation({
+      await sendHostNotification({
         meeting,
         attendeeName: name,
         attendeeEmail: email,
         startISO: event.start,
         endISO: event.end,
-        notes: clean.notes,
+        responses: clean,
         hangoutLink: event.hangoutLink,
+        eventLink: event.htmlLink,
         guestTimezone,
       });
     } catch (mailErr) {
-      console.error('confirmation email failed', mailErr);
+      console.error('host notification failed', mailErr);
     }
 
     return res.status(200).json({

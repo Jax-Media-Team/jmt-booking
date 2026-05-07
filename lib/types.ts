@@ -45,6 +45,8 @@ export interface MeetingType {
   additionalFreebusyCalendars?: string[];
   /** Extra attendees added to the event invite (e.g. teammates). */
   additionalAttendees?: string[];
+  /** Internal addresses that get a "new booking" notification email when this meeting is booked. */
+  notificationRecipients?: string[];
 }
 
 export interface BusyInterval {

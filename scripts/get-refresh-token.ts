@@ -57,7 +57,10 @@ async function main(): Promise<void> {
   const authUrl = oauth2.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
-    scope: ['https://www.googleapis.com/auth/calendar'],
+    scope: [
+      'https://www.googleapis.com/auth/calendar',
+      'https://www.googleapis.com/auth/gmail.send',
+    ],
   });
 
   const code = await new Promise<string>((resolve, reject) => {
