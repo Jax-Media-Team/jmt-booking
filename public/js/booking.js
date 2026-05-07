@@ -147,7 +147,7 @@
     for (var i = 0; i < fields.length; i++) {
       var f = fields[i];
       var fid = 'fld_' + f.name;
-      var labelHtml = escapeHtml(f.label);
+      var labelHtml = escapeHtml(f.label) + (f.required ? ' <span class="required-mark" aria-hidden="true">*</span>' : '');
       var helperHtml = f.helperText
         ? '<div class="field-helper">' + escapeHtml(f.helperText) + '</div>'
         : '';
@@ -179,6 +179,13 @@
       }
 
       html += '</div>';
+    }
+    var hasRequired = false;
+    for (var ri = 0; ri < fields.length; ri++) {
+      if (fields[ri].required) { hasRequired = true; break; }
+    }
+    if (hasRequired) {
+      html = '<p class="required-legend"><span class="required-mark">*</span> Required field</p>' + html;
     }
     els.formFields.innerHTML = html;
 
