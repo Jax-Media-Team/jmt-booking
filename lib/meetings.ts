@@ -47,11 +47,11 @@ const PHONE_FIELD: FormField = {
 };
 const NOTES_FIELD_RECAP: FormField = {
   name: 'notes',
-  label: "Anything you'd like me to know? (optional)",
+  label: "Anything you'd like us to know? (optional)",
   type: 'textarea',
   required: false,
   maxLength: 2000,
-  placeholder: 'Updates, goals, questions, context — anything that helps me prep.',
+  placeholder: 'Updates, goals, questions, context — anything that helps us prep.',
 };
 const NOTES_FIELD_DISCOVERY: FormField = {
   name: 'notes',
