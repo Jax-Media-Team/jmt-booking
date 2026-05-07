@@ -48,6 +48,7 @@
     formFields: document.getElementById('form-fields'),
     formError: document.getElementById('form-error'),
     submitBtn: document.getElementById('submit-btn'),
+    disqualifyNotice: document.getElementById('disqualify-notice'),
   };
 
   function escapeHtml(s) {
@@ -229,6 +230,32 @@
       var input = labels[i].querySelector('input');
       if (input && input.checked) labels[i].classList.add('selected');
       else labels[i].classList.remove('selected');
+    }
+    updateDisqualifyState();
+  }
+
+  function updateDisqualifyState() {
+    if (!state.meeting) return;
+    var fields = state.meeting.formFields || [];
+    var disqualifyingField = null;
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      if (!f.disqualifyValues || !f.disqualifyValues.length) continue;
+      var checked = els.formFields.querySelector('input[name="' + f.name + '"]:checked');
+      if (checked && f.disqualifyValues.indexOf(checked.value) >= 0) {
+        disqualifyingField = f;
+        break;
+      }
+    }
+    if (disqualifyingField) {
+      els.disqualifyNotice.textContent = disqualifyingField.disqualifyMessage ||
+        'Based on your answer, this may not be the right fit at this time.';
+      els.disqualifyNotice.hidden = false;
+      els.submitBtn.disabled = true;
+    } else {
+      els.disqualifyNotice.hidden = true;
+      els.disqualifyNotice.textContent = '';
+      els.submitBtn.disabled = false;
     }
   }
 

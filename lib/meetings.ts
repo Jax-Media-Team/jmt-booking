@@ -107,6 +107,9 @@ export const MEETINGS: Record<string, MeetingType> = {
         options: ['Yes', 'No'],
         helperText:
           "Most of our clients invest at least $1,500/month to get meaningful results. The discovery call is free — it just helps us explore if there's a mutual fit.",
+        disqualifyValues: ['No'],
+        disqualifyMessage:
+          "Thanks for being upfront — our work typically starts at $1,500/month, so we likely aren't the right fit right now. If your budget grows, we'd love to talk. In the meantime, feel free to email pcruz@jaxmediateam.com with any questions.",
       },
       {
         name: 'timeline',

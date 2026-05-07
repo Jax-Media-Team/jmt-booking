@@ -13,6 +13,10 @@ export interface FormField {
   placeholder?: string;
   autocomplete?: string;
   maxLength?: number;
+  /** If the response value is in this list, the booking is blocked client- and server-side. */
+  disqualifyValues?: string[];
+  /** Message shown to the user when their answer disqualifies the booking. */
+  disqualifyMessage?: string;
 }
 
 export interface MeetingType {

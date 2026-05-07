@@ -42,6 +42,14 @@ function validateResponses(
         return { ok: false, error: `${field.label}: pick one of the options` };
       }
     }
+    if (field.disqualifyValues && field.disqualifyValues.includes(value)) {
+      return {
+        ok: false,
+        error:
+          field.disqualifyMessage ??
+          'Based on your answer, this may not be the right fit at this time.',
+      };
+    }
     clean[field.name] = value;
   }
   return { ok: true, clean };
