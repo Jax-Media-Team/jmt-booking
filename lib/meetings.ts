@@ -118,6 +118,14 @@ export const MEETINGS: Record<string, MeetingType> = {
         placeholder: 'https://yourbusiness.com',
       },
       {
+        name: 'source',
+        label: 'How did you hear about us?',
+        summaryLabel: 'Source',
+        type: 'radio',
+        required: true,
+        options: ['Google', 'Referral', 'Social media', 'Other'],
+      },
+      {
         name: 'services',
         label: 'How can we help you?',
         summaryLabel: 'Services',
