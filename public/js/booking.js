@@ -446,6 +446,14 @@
     e.preventDefault();
     els.formError.hidden = true;
 
+    if (!state.selectedSlot) {
+      els.formError.textContent = 'Please pick a date and time before booking.';
+      els.formError.hidden = false;
+      els.stepForm.hidden = true;
+      els.stepTime.hidden = false;
+      return;
+    }
+
     var responses = collectResponses();
     var fields = state.meeting.formFields || [];
     for (var i = 0; i < fields.length; i++) {

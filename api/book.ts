@@ -141,8 +141,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const responses = (body.responses ?? {}) as Record<string, string>;
   const guestTimezone = body.guestTimezone ? String(body.guestTimezone).slice(0, 64) : undefined;
 
-  if (!meetingSlug) return badRequest(res, 'Missing meetingSlug');
-  if (!startISO) return badRequest(res, 'Missing startISO');
+  if (!meetingSlug) return badRequest(res, 'Missing meeting type');
+  if (!startISO) return badRequest(res, 'Please pick a date and time before booking.');
 
   const meeting = getMeeting(meetingSlug);
   if (!meeting) return res.status(404).json({ error: 'Unknown meeting type' });
