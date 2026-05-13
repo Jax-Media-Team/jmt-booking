@@ -38,7 +38,9 @@
       var p = new URLSearchParams(location.search);
       var when = p.get('when');
       var hangout = p.get('meet');
+      var type = p.get('type') || '';
       var isReschedule = p.get('rescheduled') === '1';
+
       if (isReschedule) {
         document.getElementById('success-headline').textContent = "You're rescheduled.";
         document.title = "You're rescheduled · Jax Media Team";
@@ -55,6 +57,16 @@
         var el = document.getElementById('meet-line');
         el.innerHTML = 'Join link: <a href="' + hangout.replace(/"/g, '&quot;') + '">' + hangout + '</a>';
       }
+
+      // Conversion tracking — pushes a custom event GTM/GA4 can listen for.
+      // GTM trigger: Custom Event = "booking_confirmed".
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: isReschedule ? 'booking_rescheduled' : 'booking_confirmed',
+        meeting_type: type,
+        meeting_slug: type,
+        is_reschedule: isReschedule,
+      });
     })();
   </script>
 </body>

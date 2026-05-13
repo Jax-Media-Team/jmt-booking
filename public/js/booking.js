@@ -493,6 +493,7 @@
         if (!res.ok) throw new Error(res.body.error || 'Booking failed');
         var qs = new URLSearchParams({
           when: res.body.start || state.selectedSlot,
+          type: meetingSlug,
         });
         if (res.body.hangoutLink) qs.set('meet', res.body.hangoutLink);
         if (isReschedule) qs.set('rescheduled', '1');
