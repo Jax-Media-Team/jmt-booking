@@ -1,6 +1,24 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- Booking conversion data — pushed BEFORE GTM loads so meeting_type is part
+       of the initial dataLayer state. Available to Page View triggers and visible
+       in the very first Tag Assistant container load on this page. -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    (function () {
+      var sp = new URLSearchParams(window.location.search);
+      var type = sp.get('type') || '';
+      var resched = sp.get('rescheduled') === '1';
+      window.dataLayer.push({
+        page_type: 'booking_success',
+        meeting_type: type,
+        meeting_slug: type,
+        is_reschedule: resched,
+        booking_outcome: resched ? 'rescheduled' : 'confirmed'
+      });
+    })();
+  </script>
   <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
