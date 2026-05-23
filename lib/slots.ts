@@ -47,8 +47,8 @@ function slotsForDay(
   busyIntervals: Interval[],
   earliest: DateTime
 ): string[] {
-  const dayStart = day.set({ hour: meeting.workingHourStart, minute: 0, second: 0, millisecond: 0 });
-  const dayEnd = day.set({ hour: meeting.workingHourEnd, minute: 0, second: 0, millisecond: 0 });
+  const dayStart = day.set({ hour: meeting.workingHourStart, minute: meeting.workingMinuteStart ?? 0, second: 0, millisecond: 0 });
+  const dayEnd = day.set({ hour: meeting.workingHourEnd, minute: meeting.workingMinuteEnd ?? 0, second: 0, millisecond: 0 });
 
   const slots: string[] = [];
   let cursor = dayStart;
@@ -90,13 +90,16 @@ export function isStillAvailable(
   const weekday = start.weekday % 7;
   if (!meeting.workingDays.includes(weekday)) return { ok: false, reason: 'Day is outside working days' };
 
-  const dayStart = start.set({ hour: meeting.workingHourStart, minute: 0, second: 0, millisecond: 0 });
-  const dayEnd = start.set({ hour: meeting.workingHourEnd, minute: 0, second: 0, millisecond: 0 });
+  const minStart = meeting.workingMinuteStart ?? 0;
+  const minEnd = meeting.workingMinuteEnd ?? 0;
+  const dayStart = start.set({ hour: meeting.workingHourStart, minute: minStart, second: 0, millisecond: 0 });
+  const dayEnd = start.set({ hour: meeting.workingHourEnd, minute: minEnd, second: 0, millisecond: 0 });
   const slotEnd = start.plus({ minutes: meeting.durationMinutes });
   if (start < dayStart || slotEnd > dayEnd) return { ok: false, reason: 'Slot is outside working hours' };
 
-  const minutesIntoDay = (start.hour - meeting.workingHourStart) * 60 + start.minute;
-  if (minutesIntoDay % meeting.slotIncrementMinutes !== 0) return { ok: false, reason: 'Slot is not aligned to grid' };
+  const dayStartMinutes = meeting.workingHourStart * 60 + minStart;
+  const startMinutes = start.hour * 60 + start.minute;
+  if ((startMinutes - dayStartMinutes) % meeting.slotIncrementMinutes !== 0) return { ok: false, reason: 'Slot is not aligned to grid' };
 
   const candidate = Interval.fromDateTimes(start, slotEnd);
   for (const b of busy) {

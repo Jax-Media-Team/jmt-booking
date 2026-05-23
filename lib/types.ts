@@ -45,7 +45,11 @@ export interface MeetingType {
   maxHorizonDays: number;
   workingDays: number[];
   workingHourStart: number;
+  /** Minutes past workingHourStart that the bookable day begins. Defaults to 0. */
+  workingMinuteStart?: number;
   workingHourEnd: number;
+  /** Minutes past workingHourEnd that the bookable day ends. Defaults to 0. */
+  workingMinuteEnd?: number;
   timezone: string;
   /** Description of the meeting location/conferencing for the booking page. */
   location: string;

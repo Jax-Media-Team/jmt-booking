@@ -34,8 +34,8 @@ async function main() {
   if (!m) { console.error(`unknown meeting slug: ${slug}`); process.exit(1); }
   const tz = m.timezone;
   const day = DateTime.fromISO(dateArg, { zone: tz }).startOf('day');
-  const dayStart = day.set({ hour: m.workingHourStart, minute: 0, second: 0, millisecond: 0 });
-  const dayEnd = day.set({ hour: m.workingHourEnd, minute: 0, second: 0, millisecond: 0 });
+  const dayStart = day.set({ hour: m.workingHourStart, minute: m.workingMinuteStart ?? 0, second: 0, millisecond: 0 });
+  const dayEnd = day.set({ hour: m.workingHourEnd, minute: m.workingMinuteEnd ?? 0, second: 0, millisecond: 0 });
 
   const cals = getCalendarsForMeeting(m);
   console.log('Calendars:', cals);

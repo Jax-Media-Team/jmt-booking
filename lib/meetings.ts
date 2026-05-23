@@ -7,7 +7,9 @@ const DEFAULTS = {
   maxHorizonDays: 30,
   workingDays: [1, 2, 3, 4, 5],
   workingHourStart: 8,
+  workingMinuteStart: 30,
   workingHourEnd: 17,
+  workingMinuteEnd: 0,
   timezone: 'America/New_York',
   location: 'Web conferencing details provided upon confirmation.',
 };
