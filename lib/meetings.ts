@@ -6,7 +6,7 @@ const DEFAULTS = {
   minNoticeHours: 12,
   maxHorizonDays: 30,
   workingDays: [1, 2, 3, 4, 5],
-  workingHourStart: 9,
+  workingHourStart: 8,
   workingHourEnd: 17,
   timezone: 'America/New_York',
   location: 'Web conferencing details provided upon confirmation.',
@@ -84,6 +84,27 @@ export const MEETINGS: Record<string, MeetingType> = {
     additionalAttendees: ['michael@jaxmediateam.com'],
     notificationRecipients: ['pcruz@jaxmediateam.com', 'michael@jaxmediateam.com'],
     formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD_RECAP],
+  },
+
+  'connect': {
+    ...DEFAULTS,
+    slug: 'connect',
+    name: 'Connect w/ Jax Media Team',
+    description:
+      'A 30-minute call to connect, dig into what you are working on, and figure out where we can help.',
+    longDescription:
+      'A 30-minute conversation with the JMT team to dig into what you are working on, share where we think we can help, and figure out next steps together.',
+    agenda: [
+      'A quick intro on both sides',
+      'What you are working on and where you want to go',
+      'Where Jax Media Team fits and what would come next',
+    ],
+    durationMinutes: 30,
+    eventTitle: 'Connect w/ {company} – JMT',
+    additionalFreebusyCalendars: ['michael@jaxmediateam.com'],
+    additionalAttendees: ['michael@jaxmediateam.com'],
+    notificationRecipients: ['pcruz@jaxmediateam.com', 'michael@jaxmediateam.com'],
+    formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD_DISCOVERY],
   },
 
   'discovery': {
