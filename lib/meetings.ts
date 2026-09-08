@@ -105,8 +105,8 @@ export const MEETINGS: Record<string, MeetingType> = {
     eventTitle: 'Connect w/ {company} – JMT',
     additionalFreebusyCalendars: ['michael@jaxmediateam.com'],
     additionalIcalUrlsEnv: ['SEO_TEAM_ICAL_URLS'],
-    additionalAttendees: ['michael@jaxmediateam.com', 'alan.smodic@a8c.com'],
-    notificationRecipients: ['pcruz@jaxmediateam.com', 'michael@jaxmediateam.com', 'alan.smodic@a8c.com'],
+    additionalAttendees: ['michael@jaxmediateam.com', 'alan.smodic@a8c.com', 'john.darabos@jaxmediateam.com'],
+    notificationRecipients: ['pcruz@jaxmediateam.com', 'michael@jaxmediateam.com', 'alan.smodic@a8c.com', 'john.darabos@jaxmediateam.com'],
     formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD_DISCOVERY],
   },
 
@@ -167,7 +167,9 @@ export const MEETINGS: Record<string, MeetingType> = {
     ],
     durationMinutes: 15,
     eventTitle: 'Discovery Call w/ {company}',
-    notificationRecipients: ['pcruz@jaxmediateam.com'],
+    additionalFreebusyCalendars: ['michael@jaxmediateam.com'],
+    additionalAttendees: ['michael@jaxmediateam.com'],
+    notificationRecipients: ['pcruz@jaxmediateam.com', 'michael@jaxmediateam.com'],
     formFields: [
       NAME_FIELD,
       EMAIL_FIELD,
