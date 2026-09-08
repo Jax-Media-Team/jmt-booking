@@ -11,14 +11,35 @@ let cached: Redis | null | undefined;
 
 function getClient(): Redis | null {
   if (cached !== undefined) return cached;
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-  if (!url || !token) {
+  const creds = resolveRestCreds();
+  if (!creds) {
     cached = null;
     return null;
   }
-  cached = new Redis({ url, token });
+  cached = new Redis(creds);
   return cached;
+}
+
+/** Vercel's Upstash Marketplace integration sometimes injects only the TCP
+ *  connection string as `REDIS_URL` (rediss://default:TOKEN@HOST:6379). The
+ *  REST API endpoint is at https://HOST and the token is the password from
+ *  that URL, so we derive it when the explicit REST vars aren't present. */
+function resolveRestCreds(): { url: string; token: string } | null {
+  const explicitUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const explicitToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (explicitUrl && explicitToken) return { url: explicitUrl, token: explicitToken };
+
+  const tcp = process.env.REDIS_URL || process.env.KV_URL;
+  if (!tcp) return null;
+  try {
+    const parsed = new URL(tcp);
+    if (!/upstash\.io$/i.test(parsed.hostname)) return null;
+    const token = decodeURIComponent(parsed.password || '');
+    if (!token) return null;
+    return { url: `https://${parsed.hostname}`, token };
+  } catch {
+    return null;
+  }
 }
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
