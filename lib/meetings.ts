@@ -125,7 +125,8 @@ export const MEETINGS: Record<string, MeetingType> = {
     durationMinutes: 30,
     eventTitle: 'SEO team call w/ {company}',
     additionalIcalUrlsEnv: ['SEO_TEAM_ICAL_URLS'],
-    notificationRecipients: ['pcruz@jaxmediateam.com'],
+    additionalAttendees: ['alan.smodic@a8c.com'],
+    notificationRecipients: ['pcruz@jaxmediateam.com', 'alan.smodic@a8c.com'],
     formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD_DISCOVERY],
   },
 
