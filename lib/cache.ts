@@ -33,9 +33,8 @@ function resolveRestCreds(): { url: string; token: string } | null {
   if (!tcp) return null;
   try {
     const parsed = new URL(tcp);
-    if (!/upstash\.io$/i.test(parsed.hostname)) return null;
     const token = decodeURIComponent(parsed.password || '');
-    if (!token) return null;
+    if (!token || !parsed.hostname) return null;
     return { url: `https://${parsed.hostname}`, token };
   } catch {
     return null;

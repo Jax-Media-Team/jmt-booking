@@ -14,8 +14,24 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
       .map((k) => [k, Boolean(process.env[k])])
   );
 
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  let url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  let token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  let derivedFrom = 'explicit REST vars';
+  if (!url || !token) {
+    const tcp = process.env.REDIS_URL || process.env.KV_URL;
+    if (tcp) {
+      try {
+        const parsed = new URL(tcp);
+        url = `https://${parsed.hostname}`;
+        token = decodeURIComponent(parsed.password || '');
+        derivedFrom = `derived from ${parsed.protocol}//${parsed.hostname}`;
+      } catch (err: any) {
+        derivedFrom = 'REDIS_URL parse failed: ' + err.message;
+      }
+    } else {
+      derivedFrom = 'no candidate env var found';
+    }
+  }
 
   let ping: { ok: boolean; ms?: number; error?: string } = { ok: false, error: 'no url/token found' };
   if (url && token) {
@@ -33,7 +49,8 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
   res.setHeader('Cache-Control', 'no-store');
   res.status(200).json({
     envPresent,
-    urlHostPrefix: url ? new URL(url).host.split('.').slice(0, 2).join('.') + '.…' : null,
+    derivedFrom,
+    urlHost: url ? new URL(url).host : null,
     tokenLength: token ? token.length : 0,
     ping,
   });
