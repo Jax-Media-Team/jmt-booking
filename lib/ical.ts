@@ -4,10 +4,16 @@ import * as ical from 'node-ical';
 import { cacheGet, cacheSet } from './cache';
 import type { BusyInterval, MeetingType } from './types';
 
-/** Fetched ICS text is cached in Vercel KV for this many seconds so booking-page
- *  loads don't pay the 1-2s network fetch on every request. Short enough that
- *  a canceled event on the source calendar frees the slot within minutes. */
-const ICS_CACHE_TTL_SECONDS = 15 * 60;
+/** Cache the compact busy-interval list per feed for this many seconds. Short
+ *  enough that a canceled event on the source calendar frees the slot within
+ *  minutes; long enough that a busy scheduling page hits Google infrequently. */
+const BUSY_CACHE_TTL_SECONDS = 15 * 60;
+
+/** Days forward (from today) that we pre-compute and cache. Must be >= the
+ *  availability endpoint's maxHorizonDays plus some margin for buffer/overlap.
+ *  Availability queries at request time filter this to their exact window. */
+const CACHE_HORIZON_DAYS_FORWARD = 45;
+const CACHE_HORIZON_DAYS_BACK = 1;
 
 /**
  * Resolve a meeting's iCal URL list at request time. Combines any static
@@ -38,6 +44,11 @@ export function getIcalUrlsForMeeting(meeting: MeetingType): string[] {
  * has handed us a private iCal URL for (Google Calendar's "Secret address
  * in iCal format").
  *
+ * Cached at the parsed-busy-intervals level (not raw ICS text). A single
+ * Google iCal feed can be 20 MB+ of raw text, which both blows past
+ * Upstash's per-value size limit and is slow to re-parse; the parsed
+ * intervals over a ~45-day forward window are typically only a few KB.
+ *
  * Handles single events, recurring events (RRULE) — including EXDATE
  * exclusions and RECURRENCE-ID overrides — and treats transparency /
  * cancelled status the same way Google's freebusy API does (skip
@@ -57,8 +68,12 @@ export async function getIcalBusyIntervals(
     .filter(Boolean)
     .map(async (url) => {
       try {
-        const text = await fetchIcsCached(url);
-        if (text) appendBusyFromIcs(text, start, end, out);
+        const intervals = await getBusyForUrlCached(url);
+        for (const b of intervals) {
+          const bStart = new Date(b.start);
+          const bEnd = new Date(b.end);
+          if (bEnd > start && bStart < end) out.push(b);
+        }
       } catch (err) {
         console.error(`ical fetch/parse error for ${redact(url)}:`, err);
       }
@@ -68,20 +83,36 @@ export async function getIcalBusyIntervals(
   return out;
 }
 
-async function fetchIcsCached(url: string): Promise<string | null> {
-  const cacheKey = 'ical:' + crypto.createHash('sha256').update(url).digest('base64url').slice(0, 24);
-  const cached = await cacheGet<string>(cacheKey);
+/** Return the busy intervals for one iCal URL over a fixed forward horizon.
+ *  Cache key is anchored to today's date so it stays stable within a day even
+ *  as `Date.now()` moves during a 15-min TTL, and rolls forward at midnight. */
+async function getBusyForUrlCached(url: string): Promise<BusyInterval[]> {
+  const today = new Date();
+  const dayKey = today.toISOString().slice(0, 10);
+  const urlHash = crypto.createHash('sha256').update(url).digest('base64url').slice(0, 24);
+  const cacheKey = `ical-busy:${urlHash}:${dayKey}`;
+
+  const cached = await cacheGet<BusyInterval[]>(cacheKey);
   if (cached) return cached;
+
+  const horizonStart = new Date(today);
+  horizonStart.setHours(0, 0, 0, 0);
+  horizonStart.setDate(horizonStart.getDate() - CACHE_HORIZON_DAYS_BACK);
+  const horizonEnd = new Date(horizonStart);
+  horizonEnd.setDate(horizonEnd.getDate() + CACHE_HORIZON_DAYS_BACK + CACHE_HORIZON_DAYS_FORWARD);
 
   const res = await fetch(url);
   if (!res.ok) {
     console.error(`ical fetch failed ${res.status} for ${redact(url)}`);
-    return null;
+    return [];
   }
   const text = await res.text();
-  // Fire-and-forget the cache write so a slow KV never blocks the request.
-  cacheSet(cacheKey, text, ICS_CACHE_TTL_SECONDS).catch(() => { /* logged inside cacheSet */ });
-  return text;
+  const intervals: BusyInterval[] = [];
+  appendBusyFromIcs(text, horizonStart, horizonEnd, intervals);
+
+  // Fire-and-forget cache write so a slow KV never blocks the request.
+  cacheSet(cacheKey, intervals, BUSY_CACHE_TTL_SECONDS).catch(() => { /* logged inside cacheSet */ });
+  return intervals;
 }
 
 function appendBusyFromIcs(text: string, start: Date, end: Date, out: BusyInterval[]): void {
