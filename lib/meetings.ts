@@ -102,6 +102,9 @@ export const MEETINGS: Record<string, MeetingType> = {
       'Where Jax Media Team fits and what would come next',
     ],
     durationMinutes: 45,
+    // Alan flagged 8:30 as too early for him; /connect and /seo-team open at 9:00.
+    workingHourStart: 9,
+    workingMinuteStart: 0,
     eventTitle: 'Connect w/ {company} – JMT',
     additionalFreebusyCalendars: ['michael@jaxmediateam.com', 'alan.smodic@jaxmediateam.com'],
     additionalAttendees: ['michael@jaxmediateam.com', 'alan.smodic@jaxmediateam.com', 'john.darabos@jaxmediateam.com'],
@@ -144,6 +147,9 @@ export const MEETINGS: Record<string, MeetingType> = {
       'Concrete next steps',
     ],
     durationMinutes: 30,
+    // Alan flagged 8:30 as too early; /seo-team and /connect open at 9:00.
+    workingHourStart: 9,
+    workingMinuteStart: 0,
     eventTitle: 'SEO team call w/ {company}',
     additionalFreebusyCalendars: ['alan.smodic@jaxmediateam.com'],
     additionalAttendees: ['alan.smodic@jaxmediateam.com'],
