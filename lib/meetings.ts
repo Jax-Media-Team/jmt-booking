@@ -109,6 +109,26 @@ export const MEETINGS: Record<string, MeetingType> = {
     formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD_DISCOVERY],
   },
 
+  'seo-team': {
+    ...DEFAULTS,
+    slug: 'seo-team',
+    name: 'Connect w/ the SEO Team',
+    description:
+      'A 30-minute call with our SEO team to talk strategy, audits, or where you are stuck.',
+    longDescription:
+      'A 30-minute working session with Patrick and Alan, our Director of SEO. Bring an audit question, a ranking issue, or a strategy problem — we will work through it live.',
+    agenda: [
+      'Where you are today and what is not working',
+      'What the SEO team sees + would prioritize',
+      'Concrete next steps',
+    ],
+    durationMinutes: 30,
+    eventTitle: 'SEO team call w/ {company}',
+    additionalIcalUrlsEnv: ['SEO_TEAM_ICAL_URLS'],
+    notificationRecipients: ['pcruz@jaxmediateam.com'],
+    formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD_DISCOVERY],
+  },
+
   'discovery': {
     ...DEFAULTS,
     slug: 'discovery',

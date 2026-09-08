@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { DateTime } from 'luxon';
 import { getMeeting } from '../lib/meetings';
 import { getBusyIntervals, getCalendarsForMeeting, createBookingEvent } from '../lib/calendar';
+import { getIcalBusyIntervals, getIcalUrlsForMeeting } from '../lib/ical';
 import { isStillAvailable } from '../lib/slots';
 import { sendHostNotification, sendBookerConfirmation } from '../lib/email';
 import type { BookingRequest, MeetingType, FormField } from '../lib/types';
@@ -185,7 +186,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const calendars = getCalendarsForMeeting(meeting);
     const padStart = start.minus({ hours: 1 }).toUTC().toISO()!;
     const padEnd = end.plus({ hours: 1 }).toUTC().toISO()!;
-    const busy = await getBusyIntervals(padStart, padEnd, calendars);
+    const [gcalBusy, icalBusy] = await Promise.all([
+      getBusyIntervals(padStart, padEnd, calendars),
+      getIcalBusyIntervals(getIcalUrlsForMeeting(meeting), padStart, padEnd),
+    ]);
+    const busy = [...gcalBusy, ...icalBusy];
 
     const check = isStillAvailable(meeting, start.toUTC().toISO()!, busy);
     if (!check.ok) return res.status(409).json({ error: check.reason });

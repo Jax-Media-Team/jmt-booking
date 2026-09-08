@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "googleapis": "^144.0.0",
-    "luxon": "^3.5.0"
+    "luxon": "^3.5.0",
+    "node-ical": "^0.27.1"
   },
   "devDependencies": {
     "@types/luxon": "^3.4.2",

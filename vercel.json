@@ -3,6 +3,7 @@
   "rewrites": [
     { "source": "/monthly-recap", "destination": "/book.html?type=monthly-recap" },
     { "source": "/connect", "destination": "/book.html?type=connect" },
+    { "source": "/seo-team", "destination": "/book.html?type=seo-team" },
     { "source": "/discovery", "destination": "/book.html?type=discovery" },
     { "source": "/manage", "destination": "/manage.html" }
   ],

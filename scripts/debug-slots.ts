@@ -8,6 +8,7 @@ import * as path from 'node:path';
 import { DateTime, Interval } from 'luxon';
 import { getMeeting } from '../lib/meetings';
 import { getCalendarsForMeeting, getBusyIntervals } from '../lib/calendar';
+import { getIcalBusyIntervals, getIcalUrlsForMeeting } from '../lib/ical';
 import { generateAvailableSlots } from '../lib/slots';
 
 function loadEnv(): void {
@@ -39,10 +40,17 @@ async function main() {
 
   const cals = getCalendarsForMeeting(m);
   console.log('Calendars:', cals);
+  const icalUrls = getIcalUrlsForMeeting(m);
+  console.log('iCal URLs:', icalUrls.map(u => u.replace(/private-[a-f0-9]+/i, 'private-***')));
   // Mimic api/availability.ts: pull busy for the full horizon, then generate slots
   const now = DateTime.utc();
   const horizonEnd = now.setZone(tz).plus({ days: m.maxHorizonDays }).endOf('day');
-  const busy = await getBusyIntervals(now.toISO()!, horizonEnd.toUTC().toISO()!, cals);
+  const [gcalBusy, icalBusy] = await Promise.all([
+    getBusyIntervals(now.toISO()!, horizonEnd.toUTC().toISO()!, cals),
+    getIcalBusyIntervals(icalUrls, now.toISO()!, horizonEnd.toUTC().toISO()!),
+  ]);
+  console.log(`Google freebusy: ${gcalBusy.length} intervals; iCal: ${icalBusy.length} intervals`);
+  const busy = [...gcalBusy, ...icalBusy];
   const allDays = generateAvailableSlots(m, busy, now);
   const dayResult = allDays.find(d => d.date === dateArg);
   console.log(`\nslots returned by generateAvailableSlots for ${dateArg}:`);

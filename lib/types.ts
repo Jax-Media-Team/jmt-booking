@@ -59,6 +59,12 @@ export interface MeetingType {
   eventTitle: string;
   /** Extra calendar IDs to check for conflicts (in addition to GOOGLE_FREEBUSY_CALENDARS). */
   additionalFreebusyCalendars?: string[];
+  /** Extra iCal (.ics) URLs to fetch for conflicts. Used when the person's calendar
+   *  isn't shared with our OAuth account and only a private iCal URL is available. */
+  additionalIcalUrls?: string[];
+  /** Names of env vars holding comma-separated iCal URLs, resolved at request time.
+   *  Keeps secrets out of source. Values in these env vars are merged with `additionalIcalUrls`. */
+  additionalIcalUrlsEnv?: string[];
   /** Extra attendees added to the event invite (e.g. teammates). */
   additionalAttendees?: string[];
   /** Internal addresses that get a "new booking" notification email when this meeting is booked. */

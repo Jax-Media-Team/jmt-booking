@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { DateTime } from 'luxon';
 import { getMeeting } from '../lib/meetings';
 import { getBusyIntervals, getCalendarsForMeeting } from '../lib/calendar';
+import { getIcalBusyIntervals, getIcalUrlsForMeeting } from '../lib/ical';
 import { generateAvailableSlots } from '../lib/slots';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -21,7 +22,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .plus({ days: meeting.maxHorizonDays })
       .endOf('day');
     const calendars = getCalendarsForMeeting(meeting);
-    const busy = await getBusyIntervals(now.toISO()!, horizonEnd.toUTC().toISO()!, calendars);
+    const [gcalBusy, icalBusy] = await Promise.all([
+      getBusyIntervals(now.toISO()!, horizonEnd.toUTC().toISO()!, calendars),
+      getIcalBusyIntervals(getIcalUrlsForMeeting(meeting), now.toISO()!, horizonEnd.toUTC().toISO()!),
+    ]);
+    const busy = [...gcalBusy, ...icalBusy];
     const days = generateAvailableSlots(meeting, busy, now);
 
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
