@@ -342,6 +342,7 @@ h2 { font-size: 18px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em
 
 .empty-state { color: var(--muted); font-size: 14px; padding: 16px 0; }
 .loading { color: var(--muted); font-size: 14px; padding: 24px 0; text-align: center; }
+.loading-hint { margin-top: 8px; font-size: 12.5px; color: var(--muted); opacity: .8; max-width: 360px; margin-left: auto; margin-right: auto; line-height: 1.5; }
 
 /* Form */
 .form { display: grid; gap: 14px; margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border); }

@@ -1,6 +1,13 @@
+import * as crypto from 'node:crypto';
 import { DateTime } from 'luxon';
 import * as ical from 'node-ical';
+import { cacheGet, cacheSet } from './cache';
 import type { BusyInterval, MeetingType } from './types';
+
+/** Fetched ICS text is cached in Vercel KV for this many seconds so booking-page
+ *  loads don't pay the 1-2s network fetch on every request. Short enough that
+ *  a canceled event on the source calendar frees the slot within minutes. */
+const ICS_CACHE_TTL_SECONDS = 15 * 60;
 
 /**
  * Resolve a meeting's iCal URL list at request time. Combines any static
@@ -50,13 +57,8 @@ export async function getIcalBusyIntervals(
     .filter(Boolean)
     .map(async (url) => {
       try {
-        const res = await fetch(url);
-        if (!res.ok) {
-          console.error(`ical fetch failed ${res.status} for ${redact(url)}`);
-          return;
-        }
-        const text = await res.text();
-        appendBusyFromIcs(text, start, end, out);
+        const text = await fetchIcsCached(url);
+        if (text) appendBusyFromIcs(text, start, end, out);
       } catch (err) {
         console.error(`ical fetch/parse error for ${redact(url)}:`, err);
       }
@@ -64,6 +66,22 @@ export async function getIcalBusyIntervals(
 
   await Promise.all(fetches);
   return out;
+}
+
+async function fetchIcsCached(url: string): Promise<string | null> {
+  const cacheKey = 'ical:' + crypto.createHash('sha256').update(url).digest('base64url').slice(0, 24);
+  const cached = await cacheGet<string>(cacheKey);
+  if (cached) return cached;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.error(`ical fetch failed ${res.status} for ${redact(url)}`);
+    return null;
+  }
+  const text = await res.text();
+  // Fire-and-forget the cache write so a slow KV never blocks the request.
+  cacheSet(cacheKey, text, ICS_CACHE_TTL_SECONDS).catch(() => { /* logged inside cacheSet */ });
+  return text;
 }
 
 function appendBusyFromIcs(text: string, start: Date, end: Date, out: BusyInterval[]): void {

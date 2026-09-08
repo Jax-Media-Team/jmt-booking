@@ -93,9 +93,9 @@ export const MEETINGS: Record<string, MeetingType> = {
     slug: 'connect',
     name: 'Connect w/ Jax Media Team',
     description:
-      'A 45-minute call with the JMT leadership team — Patrick, Michael (paid), and Alan (SEO).',
+      'A 45-minute call with the JMT leadership team — Patrick, Mike (paid), and Alan (SEO).',
     longDescription:
-      'A 45-minute working session with Patrick and both JMT directors: Michael (Director of Paid Media) and Alan (Director of SEO). Bring any question — strategy, campaigns, SEO, or big-picture growth.',
+      'A 45-minute working session with Patrick and both JMT directors: Mike (Director of Paid Media) and Alan (Director of SEO). Bring any question — strategy, campaigns, SEO, or big-picture growth.',
     agenda: [
       'A quick intro on both sides',
       'What you are working on and where you want to go',
@@ -115,9 +115,9 @@ export const MEETINGS: Record<string, MeetingType> = {
     slug: 'ads-team',
     name: 'Connect w/ the Ads Team',
     description:
-      'A 30-minute call with our paid media team to talk campaigns, spend, and creative.',
+      'A 30-minute call with Patrick and Mike, our Director of Paid Media, to talk campaigns, spend, and creative.',
     longDescription:
-      'A 30-minute working session with Patrick and Michael, our Director of Paid Media. Bring a campaign question, spend or scaling problem, or a creative brief.',
+      'A 30-minute working session with Patrick and Mike, our Director of Paid Media. Bring a campaign question, spend or scaling problem, or a creative brief.',
     agenda: [
       'Where you are today and what is not working',
       'What the ads team sees + would prioritize',
@@ -136,7 +136,7 @@ export const MEETINGS: Record<string, MeetingType> = {
     slug: 'seo-team',
     name: 'Connect w/ the SEO Team',
     description:
-      'A 30-minute call with our SEO team to talk strategy, audits, or where you are stuck.',
+      'A 30-minute call with Patrick and Alan, our Director of SEO, to talk strategy, audits, or where you are stuck.',
     longDescription:
       'A 30-minute working session with Patrick and Alan, our Director of SEO. Bring an audit question, a ranking issue, or a strategy problem — we will work through it live.',
     agenda: [
