@@ -93,9 +93,9 @@ export const MEETINGS: Record<string, MeetingType> = {
     slug: 'connect',
     name: 'Connect w/ Jax Media Team',
     description:
-      'A 45-minute call with the JMT leadership team — Patrick, Mike (paid), and Alan (SEO).',
+      'A 45-minute call with the JMT leadership team — Patrick, Mike (paid), Alan (SEO), plus John (development) as needed.',
     longDescription:
-      'A 45-minute working session with Patrick and both JMT directors: Mike (Director of Paid Media) and Alan (Director of SEO). Bring any question — strategy, campaigns, SEO, or big-picture growth.',
+      'A 45-minute working session with Patrick and both JMT directors: Mike (Director of Paid Media) and Alan (Director of SEO). John (development) can join if the topic calls for it. Bring any question — strategy, campaigns, SEO, dev, or big-picture growth.',
     agenda: [
       'A quick intro on both sides',
       'What you are working on and where you want to go',
