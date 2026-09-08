@@ -93,16 +93,38 @@ export const MEETINGS: Record<string, MeetingType> = {
     slug: 'connect',
     name: 'Connect w/ Jax Media Team',
     description:
-      'A 30-minute call to connect, dig into what you are working on, and figure out where we can help.',
+      'A 45-minute call with the JMT leadership team — Patrick, Michael (paid), and Alan (SEO).',
     longDescription:
-      'A 30-minute conversation with the JMT team to dig into what you are working on, share where we think we can help, and figure out next steps together.',
+      'A 45-minute working session with Patrick and both JMT directors: Michael (Director of Paid Media) and Alan (Director of SEO). Bring any question — strategy, campaigns, SEO, or big-picture growth.',
     agenda: [
       'A quick intro on both sides',
       'What you are working on and where you want to go',
       'Where Jax Media Team fits and what would come next',
     ],
-    durationMinutes: 30,
+    durationMinutes: 45,
     eventTitle: 'Connect w/ {company} – JMT',
+    additionalFreebusyCalendars: ['michael@jaxmediateam.com'],
+    additionalIcalUrlsEnv: ['SEO_TEAM_ICAL_URLS'],
+    additionalAttendees: ['michael@jaxmediateam.com', 'alan.smodic@a8c.com'],
+    notificationRecipients: ['pcruz@jaxmediateam.com', 'michael@jaxmediateam.com', 'alan.smodic@a8c.com'],
+    formFields: [NAME_FIELD, EMAIL_FIELD, COMPANY_FIELD, NOTES_FIELD_DISCOVERY],
+  },
+
+  'ads-team': {
+    ...DEFAULTS,
+    slug: 'ads-team',
+    name: 'Connect w/ the Ads Team',
+    description:
+      'A 30-minute call with our paid media team to talk campaigns, spend, and creative.',
+    longDescription:
+      'A 30-minute working session with Patrick and Michael, our Director of Paid Media. Bring a campaign question, spend or scaling problem, or a creative brief.',
+    agenda: [
+      'Where you are today and what is not working',
+      'What the ads team sees + would prioritize',
+      'Concrete next steps',
+    ],
+    durationMinutes: 30,
+    eventTitle: 'Ads team call w/ {company}',
     additionalFreebusyCalendars: ['michael@jaxmediateam.com'],
     additionalAttendees: ['michael@jaxmediateam.com'],
     notificationRecipients: ['pcruz@jaxmediateam.com', 'michael@jaxmediateam.com'],
